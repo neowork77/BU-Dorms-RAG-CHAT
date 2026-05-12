@@ -7,7 +7,7 @@ import type { RetrievedDoc } from '@/lib/rag-logger';
 
 // Initialize the Typhoon API client
 const openai = new OpenAI({
-    apiKey: process.env.SCBX_TOKEN || process.env.TYPHOON_API_KEY,
+    apiKey: process.env.TYPHOON_API_KEY,
     baseURL: 'https://api.opentyphoon.ai/v1',
 });
 
