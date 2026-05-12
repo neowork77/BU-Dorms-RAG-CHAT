@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChatHistoryList } from "./ChatHistoryList";
 import { useChatHistory } from "../contexts/ChatHistoryContext";
+import { createClient } from "@/lib/supabase/client";
+import { LoadingScreen } from "./LoadingScreen";
 
 export function MobileTopBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = createClient();
+  const [signingOut, setSigningOut] = useState(false);
   const { startNewChat } = useChatHistory();
 
   const handleClose = () => {
@@ -19,6 +23,11 @@ export function MobileTopBar() {
       setIsOpen(false);
       setIsClosing(false);
     }, 200); // Matches the animation duration
+  };
+
+  const handleLogout = async () => {
+    setSigningOut(true);
+    await supabase.auth.signOut();
   };
 
   // Close drawer on route change
@@ -41,18 +50,27 @@ export function MobileTopBar() {
   }, [isOpen]);
 
   const handleNewChat = () => {
-    startNewChat();
-    router.push("/app");
     handleClose();
+    setTimeout(() => {
+      startNewChat();
+      router.push("/app");
+    }, 250);
   };
 
   return (
     <>
-      <header className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-surface-container-lowest/80 backdrop-blur-md border-b border-surface-variant/30 z-40 sticky top-0 shadow-sm">
+      {signingOut && (
+        <LoadingScreen 
+          message="กำลังออกจากระบบ..." 
+          onComplete={() => router.replace("/")}
+          durationInMs={1000}
+        />
+      )}
+      <header className="lg:hidden flex items-center justify-between w-full px-4 py-3 bg-surface-container-lowest/80 backdrop-blur-md border-b border-surface-variant/30 z-40 sticky top-0 shadow-sm">
         {/* Hamburger */}
         <button
           onClick={() => setIsOpen(true)}
-          className="text-on-surface-variant hover:bg-primary-container/30 rounded-full p-2 transition-colors active:scale-90"
+          className="flex items-center justify-center w-10 h-10 text-on-surface-variant hover:bg-primary-container/30 rounded-full transition-colors active:scale-90"
           aria-label="Open menu"
         >
           <span className="material-symbols-outlined">menu</span>
@@ -61,15 +79,13 @@ export function MobileTopBar() {
         {/* Title */}
         <span className="text-xl font-black text-primary tracking-tighter">BU Dorms</span>
 
-        {/* Right actions */}
-        <button className="text-on-surface-variant hover:bg-primary-container/30 rounded-full p-2 transition-colors active:scale-90">
-          <span className="material-symbols-outlined">account_circle</span>
-        </button>
+        {/* Right spacer to keep title centered */}
+        <div className="w-10 h-10 shrink-0" />
       </header>
 
       {/* Mobile Sidebar Drawer */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop */}
           <div
             className={`absolute inset-0 bg-on-surface/40 backdrop-blur-sm ${
@@ -120,7 +136,7 @@ export function MobileTopBar() {
             </div>
 
             {/* Chat History */}
-            <div className="flex-1 overflow-y-auto px-0">
+            <div className="flex-1 overflow-y-auto px-0 scrollbar-hide">
               <div className="px-6 py-2">
                 <p className="text-xs uppercase tracking-wider text-outline font-semibold font-[family-name:var(--font-lexend)]">
                   Recent Chats
@@ -140,13 +156,13 @@ export function MobileTopBar() {
                   <span className="material-symbols-outlined">settings</span>
                   Settings
                 </Link>
-                <a
-                  className="flex items-center gap-3 text-on-surface-variant hover:text-primary px-4 py-2 hover:bg-primary-container/20 rounded-full transition-colors"
-                  href="#"
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 text-on-surface-variant hover:text-error px-4 py-2 hover:bg-error-container/30 rounded-full transition-colors cursor-pointer text-left"
                 >
                   <span className="material-symbols-outlined">logout</span>
                   Logout
-                </a>
+                </button>
               </div>
             </div>
           </aside>

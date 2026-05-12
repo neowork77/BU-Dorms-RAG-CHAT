@@ -295,19 +295,19 @@ function AssistantMessage({
   };
 
   return (
-    <div className="flex justify-start w-full animate-chat-message-in">
-      <div className="w-full flex gap-2.5 sm:gap-3">
+    <div className="flex justify-start w-full animate-chat-message-in mb-2 sm:mb-3">
+      <div className="w-full flex gap-2 sm:gap-2.5 md:gap-3">
         {/* AI Avatar */}
-        <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 shrink-0 rounded-full flex items-center justify-center mt-0.5 overflow-hidden bg-primary-container ring-2 ring-primary/20 shadow-md">
+        <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 shrink-0 rounded-full flex items-center justify-center mt-0.5 overflow-hidden bg-primary-container ring-2 ring-primary/20 shadow-md">
           <img
-            src="/assets/BU_Dorms_LOGO.webp"
+            src="/assets/BU_Dorms_HEADCHAT.webp"
             alt="AI Avatar"
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="flex flex-col gap-2.5 sm:gap-3 flex-1 overflow-hidden items-start min-w-0">
+        <div className="flex flex-col gap-2 sm:gap-2.5 md:gap-3 flex-1 overflow-hidden items-start min-w-0">
           {/* Text content — no box, full-width with accent bar */}
-          <div className="w-full text-on-surface break-words prose-chat text-sm sm:text-base leading-relaxed border-l-[3px] border-primary/25 pl-3 sm:pl-4">
+          <div className="w-full text-on-surface break-words prose-chat text-[13px] sm:text-sm md:text-base leading-relaxed border-l-[3px] border-primary/25 pl-2.5 sm:pl-3 md:pl-4">
             {renderBody()}
           </div>
           {/* Source badges */}
@@ -375,7 +375,7 @@ function RAGPipelineIndicator({ currentStage }: { currentStage: RagStage }) {
         {/* AI Avatar */}
         <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 shrink-0 rounded-full flex items-center justify-center mt-1 shadow-sm overflow-hidden bg-primary-container">
           <img
-            src="/assets/BU_Dorms_LOGO.webp"
+            src="/assets/BU_Dorms_HEADCHAT.webp"
             alt="AI Avatar"
             className="w-full h-full object-cover"
           />
@@ -465,9 +465,9 @@ function ChatIdBadge({ sessionId }: { sessionId: string }) {
 function WelcomeGreeting() {
   return (
     <div className="text-center mb-6 sm:mb-8 animate-chat-message-in px-2">
-      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 mx-auto mb-3 sm:mb-4 bg-primary-container rounded-full flex items-center justify-center shadow-sm overflow-hidden">
+      <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 bg-primary-container rounded-full flex items-center justify-center shadow-sm overflow-hidden">
         <img
-          src="/assets/BU_Dorms_LOGO.webp"
+          src="/assets/BU_Dorms_HEADCHAT.webp"
           alt="BU Dorms Logo"
           className="w-full h-full object-cover"
         />
@@ -604,7 +604,10 @@ export function ChatContent({
       ref={scrollRef}
       className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 flex flex-col items-center"
     >
-      <div className="w-full max-w-5xl flex flex-col gap-3 sm:gap-4 md:gap-6 pb-28 sm:pb-32 md:pb-36">
+      <div 
+        key={sessionId || "new-chat"}
+        className="w-full max-w-5xl flex flex-col gap-3 sm:gap-4 md:gap-6 pb-36 sm:pb-40 md:pb-44 animate-page-fade-in"
+      >
         {sessionId && <ChatIdBadge sessionId={sessionId} />}
         {messages.length === 0 && <WelcomeGreeting />}
 

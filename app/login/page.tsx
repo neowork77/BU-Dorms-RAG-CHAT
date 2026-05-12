@@ -102,7 +102,7 @@ export default function LoginPage() {
   }, [supabase]);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col w-full h-full overflow-y-auto scrollbar-hide">
       {showSuccessLoading && (
         <LoadingScreen 
           message="กำลังเตรียมเข้าสู่ระบบ..." 

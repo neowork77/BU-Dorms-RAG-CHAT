@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -23,7 +23,9 @@ export function Sidebar() {
 
   const handleNewChat = () => {
     startNewChat();
-    router.push("/app");
+    setTimeout(() => {
+      router.push("/app");
+    }, 10);
   };
 
   return (
@@ -35,7 +37,7 @@ export function Sidebar() {
           durationInMs={1000}
         />
       )}
-      <aside className="hidden md:flex flex-col h-screen w-80 bg-surface-container-lowest rounded-r-[40px] py-6 soft-shadow z-20">
+      <aside className="hidden lg:flex flex-col h-screen w-80 bg-surface-container-lowest rounded-r-[40px] py-6 soft-shadow z-20">
         {/* Header */}
         <div className="px-6 mb-4 flex items-center gap-3">
         <div className="w-12 h-12 shrink-0 flex items-center justify-center overflow-hidden">
@@ -59,7 +61,7 @@ export function Sidebar() {
       <div className="px-4 mb-2">
         <button
           onClick={handleNewChat}
-          className="w-full flex items-center justify-center gap-3 rounded-full px-4 py-3 transition-all duration-200 bg-primary-container text-on-primary-container font-bold hover:bg-primary-container/80 active:scale-95"
+          className="w-full flex items-center justify-center gap-3 rounded-full px-4 py-3 transition-all duration-200 bg-primary-container text-on-primary-container font-bold hover:bg-primary-container/80 active:scale-95 cursor-pointer"
         >
           <span
             className="material-symbols-outlined"

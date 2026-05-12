@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useChatHistory } from "../contexts/ChatHistoryContext";
 
@@ -52,10 +52,20 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
   };
 
   const handleSelect = (id: string) => {
-    if (pathname !== `/app/${id}`) {
-      router.push(`/app/${id}`);
+    if (onItemClick) {
+      onItemClick();
+      if (pathname !== `/app/${id}`) {
+        setTimeout(() => {
+          router.push(`/app/${id}`);
+        }, 250);
+      }
+    } else {
+      if (pathname !== `/app/${id}`) {
+        setTimeout(() => {
+          router.push(`/app/${id}`);
+        }, 10);
+      }
     }
-    onItemClick?.();
   };
 
   if (sessions.length === 0) {
@@ -121,7 +131,7 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
                       : "opacity-0 group-hover:opacity-100 hover:bg-surface-container-high hover:text-on-surface"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-[18px] cursor-pointer">
                     more_horiz
                   </span>
                 </button>
@@ -141,7 +151,7 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
                     setRenamingId(session.id);
                     setMenuOpenId(null);
                   }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-on-surface hover:bg-surface-container-high/60 transition-colors"
+                  className="cursor-pointer w-full flex items-center gap-2.5 px-4 py-2 text-sm text-on-surface hover:bg-surface-container-high/60 transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
                   Rename
@@ -151,11 +161,13 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
                     e.stopPropagation();
                     deleteSession(session.id);
                     if (pathname === `/app/${session.id}`) {
-                      router.push("/app");
+                      setTimeout(() => {
+                        router.push("/app");
+                      }, 10);
                     }
                     setMenuOpenId(null);
                   }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-error hover:bg-error-container/30 transition-colors"
+                  className="cursor-pointer w-full flex items-center gap-2.5 px-4 py-2 text-sm text-error hover:bg-error-container/30 transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px]">delete</span>
                   Delete

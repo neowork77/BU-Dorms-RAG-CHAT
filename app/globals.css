@@ -168,13 +168,13 @@ body {
   line-height: 1.6;
 }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background-color: var(--md-tertiary-container);
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+/* Hide scrollbar globally but keep scrolling functionality */
+::-webkit-scrollbar { 
+  display: none; 
+}
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 /* Hide scrollbar for horizontal image strips */

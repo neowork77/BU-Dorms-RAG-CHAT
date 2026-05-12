@@ -29,10 +29,12 @@ export default function Home() {
     createSession,
     updateSessionMessages,
     selectSession,
-    startNewChat
+    startNewChat,
+    loadSessionMessages,
   } = useChatHistory();
 
   const isProcessing = ragStage !== null && ragStage !== 'done';
+  const loadingSessionRef = useRef<string | null>(null);
 
   // Sync URL -> State
   const urlId = params?.chatId?.[0];
@@ -50,15 +52,27 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlId]); // Depend on string value instead of array to prevent infinite loop
 
-  // When user selects a session from sidebar, load its messages
+  // When user selects a session from sidebar, load its messages from Supabase
   useEffect(() => {
     if (activeSessionId) {
-      // Only set messages if we are actually switching to a different chat
+      // Only load if we are actually switching to a different chat
       if (sessionIdRef.current !== activeSessionId) {
+        sessionIdRef.current = activeSessionId;
+        
+        // Check if the session already has messages in local state (e.g. just created)
         const session = sessions.find((s) => s.id === activeSessionId);
-        if (session) {
+        if (session && session.messages.length > 0) {
           setMessages(session.messages);
-          sessionIdRef.current = activeSessionId;
+        } else {
+          // Load messages from Supabase
+          loadingSessionRef.current = activeSessionId;
+          loadSessionMessages(activeSessionId).then((msgs) => {
+            // Only apply if we haven't switched away while loading
+            if (loadingSessionRef.current === activeSessionId) {
+              setMessages(msgs);
+              loadingSessionRef.current = null;
+            }
+          });
         }
       }
     } else {
@@ -66,9 +80,10 @@ export default function Home() {
       if (sessionIdRef.current !== null) {
         setMessages([]);
         sessionIdRef.current = null;
+        loadingSessionRef.current = null;
       }
     }
-  }, [activeSessionId, sessions]);
+  }, [activeSessionId, sessions, loadSessionMessages]);
 
   // Persist messages to the session whenever they change
   useEffect(() => {

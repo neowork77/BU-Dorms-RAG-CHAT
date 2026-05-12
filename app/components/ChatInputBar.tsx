@@ -96,13 +96,42 @@ export function ChatInputBar({
     }
   }
 
+  const suggestions = [
+    "ขอรายละเอียด plum หน่อยครับ",
+    "มีงบ 6,000 บาท แนะนำหอให้หน่อยครับ",
+    "หาหอพักราคาถูกที่สุดให้หน่อย ไม่เกี่ยงระยะทาง",
+    "มีหอราคา 1,500 มั้ย",
+    "ขอหอที่เดินไปมอได้หน่อยครับ",
+    "มีหอพักในระยะไม่เกิน 2 กิโลเมตรมั้ย",
+  ];
+
   return (
-    <div className="absolute bottom-0 left-0 w-full z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-10 pb-6 md:pb-8 px-4 flex justify-center">
-      <div className="w-full max-w-5xl">
-        <div className="bg-surface-container-lowest rounded-full p-2 flex items-center border-2 border-surface-variant shadow-[0_10px_30px_rgba(184,228,213,0.15)] focus-within:border-primary-container transition-colors pl-4">
+    <div className="absolute bottom-0 left-0 w-full z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6 sm:pt-10 pb-4 sm:pb-6 md:pb-8 px-2 sm:px-4 flex justify-center">
+      <div className="w-full max-w-5xl flex flex-col">
+        {/* Suggestions */}
+        <div 
+          className="flex overflow-x-auto gap-1.5 sm:gap-2 mb-2 sm:mb-3 px-1 pb-1 no-scrollbar" 
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <style dangerouslySetInnerHTML={{__html: `
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+          `}} />
+          {suggestions.map((text, i) => (
+            <button
+              key={i}
+              onClick={() => onChange(text)}
+              disabled={disabled}
+              className="whitespace-nowrap px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-surface-variant bg-surface-container-lowest text-on-surface text-[12px] sm:text-[14px] hover:bg-surface-variant transition-colors flex-shrink-0 shadow-sm cursor-pointer"
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-surface-container-lowest rounded-full p-1.5 sm:p-2 flex items-center border-2 border-surface-variant shadow-[0_10px_30px_rgba(184,228,213,0.15)] focus-within:border-primary-container transition-colors pl-3 sm:pl-4">
           {/* Input Field */}
           <input
-            className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[16px] leading-[1.6] px-4 placeholder:text-outline-variant text-on-surface"
+            className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[12px] sm:text-[16px] leading-[1.6] px-2 sm:px-4 placeholder:text-outline-variant text-on-surface placeholder:text-[12px] sm:placeholder:text-[16px]"
             placeholder="หาหอพักที่โดนใจ... ลองถาม BU Dorms ดูสิ"
             type="text"
             value={value}
@@ -114,7 +143,7 @@ export function ChatInputBar({
           <button 
             onClick={toggleListening}
             disabled={disabled}
-            className={`cursor-pointer w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all mr-1 ${
+            className={`cursor-pointer w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-full flex items-center justify-center transition-all mr-1 ${
               isListening 
                 ? "bg-error text-on-error shadow-[0_0_15px_rgba(186,26,26,0.3)]" 
                 : "text-outline hover:text-primary hover:bg-primary-container/30"
@@ -122,28 +151,28 @@ export function ChatInputBar({
             title={isListening ? "Stop listening" : "Start voice input"}
           >
             {isListening ? (
-              <div className="flex items-center justify-center gap-[2px] h-4 w-4">
-                <span className="w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
-                <span className="w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
-                <span className="w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
-                <span className="w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
+              <div className="flex items-center justify-center gap-[1px] sm:gap-[2px] h-3 w-3 sm:h-4 sm:w-4">
+                <span className="w-[2px] sm:w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
+                <span className="w-[2px] sm:w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
+                <span className="w-[2px] sm:w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
+                <span className="w-[2px] sm:w-[3px] h-full bg-on-error rounded-[1px] soundwave-bar" />
               </div>
             ) : (
-              <span className="material-symbols-outlined">mic</span>
+              <span className="material-symbols-outlined text-[20px] sm:text-[24px]">mic</span>
             )}
           </button>
           {/* Send Button */}
           <button
             onClick={onSend}
             disabled={!canSend}
-            className={`cursor-pointer w-12 h-12 shrink-0 rounded-full flex items-center justify-center transition-all shadow-md ${
+            className={`cursor-pointer w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full flex items-center justify-center transition-all shadow-md ${
               canSend
                 ? "bg-primary text-on-primary hover:opacity-90 active:scale-95"
                 : "bg-surface-container-high text-outline cursor-not-allowed opacity-50"
             }`}
           >
             <span
-              className="material-symbols-outlined"
+              className="material-symbols-outlined text-[18px] sm:text-[24px]"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               send

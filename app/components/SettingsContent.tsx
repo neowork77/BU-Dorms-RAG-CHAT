@@ -68,7 +68,10 @@ export function SettingsContent() {
 
       // 3. Update User Metadata
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl }
+        data: { 
+          custom_avatar_url: publicUrl,
+          avatar_url: publicUrl 
+        }
       });
 
       if (updateError) throw updateError;
@@ -76,7 +79,11 @@ export function SettingsContent() {
       // Update local state
       setUser({
         ...user,
-        user_metadata: { ...user.user_metadata, avatar_url: publicUrl }
+        user_metadata: { 
+          ...user.user_metadata, 
+          custom_avatar_url: publicUrl,
+          avatar_url: publicUrl 
+        }
       });
     } catch (error) {
       console.error("Error uploading avatar:", error);
@@ -96,6 +103,7 @@ export function SettingsContent() {
       setUser(user);
       if (user) {
         setEditedName(
+          user.user_metadata?.custom_full_name ||
           user.user_metadata?.full_name ||
           user.user_metadata?.name ||
           user.email?.split("@")[0] ||
@@ -119,7 +127,10 @@ export function SettingsContent() {
     setSaveSuccess(false);
     
     const { error } = await supabase.auth.updateUser({
-      data: { full_name: editedName.trim() }
+      data: { 
+        custom_full_name: editedName.trim(),
+        full_name: editedName.trim() 
+      }
     });
     
     if (!error) {
@@ -130,7 +141,11 @@ export function SettingsContent() {
       if (user) {
         setUser({
           ...user,
-          user_metadata: { ...user.user_metadata, full_name: editedName.trim() }
+          user_metadata: { 
+            ...user.user_metadata, 
+            custom_full_name: editedName.trim(),
+            full_name: editedName.trim() 
+          }
         });
       }
     } else {
@@ -142,10 +157,12 @@ export function SettingsContent() {
 
   // Extract profile data
   const avatarUrl =
+    user?.user_metadata?.custom_avatar_url ||
     user?.user_metadata?.avatar_url ||
     user?.user_metadata?.picture ||
     null;
   const displayName =
+    user?.user_metadata?.custom_full_name ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email?.split("@")[0] ||
