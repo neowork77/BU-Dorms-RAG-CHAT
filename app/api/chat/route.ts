@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { pipeline } from '@huggingface/transformers';
 import OpenAI from 'openai';
 import { RAGLogger } from '@/lib/rag-logger';
 import type { RetrievedDoc } from '@/lib/rag-logger';
@@ -11,18 +10,56 @@ const openai = new OpenAI({
     baseURL: 'https://api.opentyphoon.ai/v1',
 });
 
-// Use a singleton pattern for the feature extraction pipeline
-class PipelineSingleton {
-    static task: any = 'feature-extraction';
-    static model: any = 'Xenova/paraphrase-multilingual-MiniLM-L12-v2';
-    static instance: any = null;
+// ── HuggingFace Inference API for embeddings ──────────────────
+// Uses the same model (paraphrase-multilingual-MiniLM-L12-v2, 384-dim)
+// via HTTP instead of local ONNX — compatible with Vercel serverless.
+const HF_EMBEDDING_MODEL = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2';
+const HF_API_URL = `https://api-inference.huggingface.co/pipeline/feature-extraction/${HF_EMBEDDING_MODEL}`;
 
-    static async getInstance(progress_callback: any = undefined) {
-        if (this.instance === null) {
-            this.instance = pipeline(this.task, this.model, { progress_callback });
-        }
-        return this.instance;
+async function getEmbedding(text: string): Promise<number[]> {
+    const response = await fetch(HF_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(process.env.HF_API_TOKEN ? { 'Authorization': `Bearer ${process.env.HF_API_TOKEN}` } : {}),
+        },
+        body: JSON.stringify({
+            inputs: text,
+            options: { wait_for_model: true },
+        }),
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`HuggingFace Embedding API error (${response.status}): ${errText}`);
     }
+
+    const result = await response.json();
+
+    // The API returns a nested array for feature-extraction; we need to mean-pool + normalize
+    if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
+        // result shape: [1, seq_len, 384] → mean pool over seq_len
+        const tokens: number[][] = result[0];
+        const dim = tokens[0].length;
+        const mean = new Array(dim).fill(0);
+        for (const tok of tokens) {
+            for (let i = 0; i < dim; i++) mean[i] += tok[i];
+        }
+        const norm = Math.sqrt(mean.reduce((s, v) => s + (v / tokens.length) ** 2, 0));
+        return mean.map(v => (v / tokens.length) / (norm || 1));
+    }
+
+    // If the API returns a flat array directly (sentence-transformers pipeline)
+    if (Array.isArray(result) && typeof result[0] === 'number') {
+        return result;
+    }
+
+    // Fallback: first element if array of arrays
+    if (Array.isArray(result) && Array.isArray(result[0])) {
+        return result[0];
+    }
+
+    throw new Error('Unexpected embedding response format');
 }
 
 // ── BU Coordinates ─────────────────────────────────────────────
@@ -255,12 +292,11 @@ async function embedAndRetrieve(
     filterPrice: number | null,
     supabase: any
 ): Promise<{ candidates: Candidate[]; rawCount: number; rawDocs: RetrievedDoc[] }> {
-    const extractor = await PipelineSingleton.getInstance();
-    const output = await extractor(queryText, { pooling: 'mean', normalize: true });
-    
+    const embedding = await getEmbedding(queryText);
+
     // ยิงเข้า Supabase RPC
     const { data: rawResults, error } = await supabase.rpc('match_dorms', {
-        query_embedding: Array.from(output.data),
+        query_embedding: embedding,
         match_count: matchCount,
         filter_price: filterPrice,
     });
@@ -395,29 +431,38 @@ export async function POST(request: Request) {
                     send({ stage: 'reasoning' });
 
                     const agentSystemPrompt =
-                        `คุณคือ 'BU Dorms' ผู้เชี่ยวชาญด้านการให้ข้อมูลหอพักและคอนโดใกล้มหาวิทยาลัยกรุงเทพ วิทยาเขตรังสิต (BU)\n` +
-                        `คาแรคเตอร์: สุภาพ เป็นมืออาชีพ เป็นที่ปรึกษาที่ให้ข้อมูลแน่น ชัดเจน\n\n` +
-                        `ข้อมูลมหาวิทยาลัย:\n${BU_CONTEXT}\n\n` +
+                        `คุณคือ 'BU Dorms' ผู้เชี่ยวชาญด้านข้อมูลหอพักใกล้มหาวิทยาลัยกรุงเทพ (BU) รังสิต\n` +
+                        `คาแรคเตอร์: สุภาพ มืออาชีพ ข้อมูลแน่น ชัดเจน และตรงไปตรงมา\n\n` +
+                        `## ข้อมูลมหาวิทยาลัย:\n${BU_CONTEXT}\n\n` +
+                        `## กฎการใช้ Tools (สำคัญมาก):\n` +
+                        `1. เมื่อเรียกใช้ Tool ค้นหาและได้ข้อมูลหอพักมาแล้ว **ให้หยุดการเรียก Tool ทันที** และสร้างคำตอบจากข้อมูลนั้น\n` +
+                        `2. ห้ามเรียก Tool เปรียบเทียบ (compare_dorms) ซ้ำซ้อน หากผู้ใช้ไม่ได้สั่งให้เปรียบเทียบโดยตรง\n` +
+                        `3. หากข้อมูลใน Tool เพียงพอต่อการตอบคำถามแล้ว ให้เข้าสู่ขั้นตอนการตอบ (Answer) ทันที ห้ามวนลูป\n\n` +
                         `## หน้าที่ของคุณ (Autonomous Agent)\n` +
                         `1. วิเคราะห์คำถามและเลือกใช้ Tools เพื่อดึงข้อมูล เมื่อได้ข้อมูลแล้วให้สรุปเป็นคำตอบที่ละเอียดและครอบคลุมที่สุด\n` +
                         `2. หากผู้ใช้ถามนอกเรื่อง ให้ตอบปฏิเสธอย่างสุภาพแล้วดึงกลับมาเรื่องหอพัก\n\n` +
                         `## 💬 กฎการสื่อสารและการตอบคำถาม\n` +
-                        `1. **การเกริ่นนำ:** ต้องเริ่มต้นด้วยการทวนคำถามหรือเงื่อนไขของผู้ใช้อย่างเป็นธรรมชาติ\n` +
+                        `1. **การเริ่มต้น:** ให้ทวนคำถามหรือเงื่อนไขของผู้ใช้อย่างเป็นธรรมชาติ (เช่น "สำหรับหอพักในงบ 5,000 บาทที่ใกล้ ม.กรุงเทพ ที่คุณสนใจ มีรายการดังนี้ครับ")\n` +
                         `2. **การให้ข้อมูลที่แน่นและเจาะลึก:** ดึงข้อมูลจากส่วน <context_data> มานำเสนอให้ครบถ้วนที่สุด\n` +
-                        `3. **การปิดบทสนทนา:** ทิ้งท้ายด้วยความยินดีให้บริการ\n\n` +
+                        `3. **ห้ามพิมพ์คำว่า [ประโยคเกริ่นนำ] หรือ [ประโยคปิดท้าย] ออกมาบนหน้าจอเด็ดขาด** ให้พิมพ์เป็นเนื้อหาภาษาคนตามปกติ\n` +
+                        `4. **ความถูกต้อง:** ข้อมูลชื่อ ราคา ระยะทาง ต้องตรงตามที่ Tool ส่งมาเป๊ะๆ ห้ามแต่งเอง\n` +
+                        `5. **การปิดบทสนทนา:** ทิ้งท้ายด้วยความยินดีให้บริการ\n\n` +
                         `⚠️ กฎเหล็กขั้นเด็ดขาด (CRITICAL RULES):\n` +
-                        `1. ข้อมูลทั้งหมดต้องมาจากผลลัพธ์ของ Tools (role: 'tool') เท่านั้น ห้ามแต่งข้อมูลเองเด็ดขาด\n` +
+                        `1. ข้อมูลทั้งหมดต้องมาจากผลลัพธ์ของ Tools (role: 'tool') ท่านั้น ห้ามแต่งข้อมูลเองเด็ดขาด\n` +
                         `2. ถ้าระบบ Tool ตอบว่า 'ไม่พบข้อมูล' ให้คุณตอบขออภัยผู้ใช้ตรงๆ ห้ามเสนอหอพักอื่นที่เขาไม่ได้ถามหา\n\n` +
+                        `3. ห้ามแอบอ้างหรือเสนอตัวว่ามีข้อมูล "รีวิวจากผู้พักจริง", "ความพึงพอใจ", หรือ "ระบบการจอง" เนื่องจากระบบปัจจุบันยังไม่รองรับข้อมูลส่วนนี้\n` +
+                        `4. หากผู้ใช้ถามหารีวิวหรือการจอง ให้ตอบปฏิเสธอย่างสุภาพว่า "ขณะนี้ระบบยังไม่มีข้อมูลรีวิวและการจองโดยตรง" เท่านั้น\n` +
+                        `5. ในประโยคปิดท้าย ห้ามเสนอแนะในสิ่งที่ไม่มีในฐานข้อมูล ให้เสนอได้เพียงการสอบถามรายละเอียดหอพักอื่นๆ ที่อยู่ในฐานข้อมูล เพิ่มเติมเท่านั้น\n` +
                         `## 📝 รูปแบบการแสดงผล\n` +
-                        `[ประโยคเกริ่นนำ]\n\n` +
-                        `🏠 [ลำดับ]. **[ชื่อหอพัก]**\n` +
+                        `พิมพ์ประโยคเกริ่นนำทวนคำถามของผู้ใช้...\n\n` +
+                        `🏠 1. **[ชื่อหอพัก]**\n` +
                         `  💸 ราคา: [ราคา] บาท/เดือน\n` +
                         `  📍 ระยะทาง: [ระยะทาง]\n` +
                         `  🛋️ ภายในห้อง: [สรุปข้อมูลห้อง]\n` +
                         `  🏊‍♂️ ส่วนกลาง: [สรุปสิ่งอำนวยความสะดวก]\n` +
                         `  💡 จุดเด่น: [สรุปสั้นๆ ว่าที่นี่เหมาะกับใคร]\n\n` +
-                        `(ทำซ้ำตามจำนวนหอพักที่ค้นพบ)\n\n` +
-                        `[ประโยคปิดท้าย]`;
+                        `(ทำซ้ำให้ครบทุกรายการที่ Tool ค้นพบ โดยเปลี่ยนตัวเลขลำดับ 🏠 1., 🏠 2. ไปเรื่อยๆ)\n\n` +
+                        `พิมพ์ประโยคปิดท้ายสรุปหรือสอบถามเพิ่มเติม...`;
 
                     const messagesForAgent: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
                         { role: 'system', content: agentSystemPrompt },
@@ -522,14 +567,39 @@ export async function POST(request: Request) {
                                     if (maxPrice !== null) {
                                         candidates = candidates.filter(c => c.price_val <= maxPrice);
                                     }
-                                    
+
                                     // 🔥 กรองด้วยฟังก์ชัน Fuzzy Search ตัวใหม่!
                                     if (targetDormName) {
                                         candidates = filterCandidatesByTargetName(candidates, targetDormName);
                                     }
 
                                     candidates = sortCandidates(candidates, sortBy);
-                                    const topResults = candidates.slice(0, 5);
+
+                                    // --- ตรรกะการเลือกให้หลากหลายแบบฉลาดขึ้น ---
+                                    const uniqueProjects = new Set();
+                                    const diverseResults: Candidate[] = [];
+
+                                    // รอบแรก: พยายามหาโครงการที่ไม่ซ้ำกันก่อน
+                                    for (const c of candidates) {
+                                        const projectName = c.name.split(' (')[0].replace(/ตึก\s*\w+/g, '').replace(/ชั้น\s*\d+/g, '').trim();
+                                        if (!uniqueProjects.has(projectName)) {
+                                            diverseResults.push(c);
+                                            uniqueProjects.add(projectName);
+                                        }
+                                        if (diverseResults.length >= 5) break;
+                                    }
+
+                                    // 🔥 เพิ่มส่วนนี้: ถ้าได้โครงการไม่ซ้ำมาไม่ครบ 5 แห่ง ให้เอาห้องที่เหลือของโครงการเดิมมาเติมให้เต็ม
+                                    if (diverseResults.length < 5) {
+                                        for (const c of candidates) {
+                                            if (!diverseResults.find(item => item.name === c.name)) { // กันห้องซ้ำตัวเดิม
+                                                diverseResults.push(c);
+                                            }
+                                            if (diverseResults.length >= 5) break;
+                                        }
+                                    }
+
+                                    const topResults = diverseResults;
 
                                     const filteredDocsForLog: RetrievedDoc[] = topResults.map((c, i) => {
                                         const originalDoc = rawDocs.find(r => r.name === c.name);
@@ -607,7 +677,26 @@ export async function POST(request: Request) {
                                         }
 
                                         candidates = sortCandidates(candidates, sortBy);
-                                        const topResults = candidates.slice(0, 5);
+
+                                        // --- ตรรกะการเลือกให้หลากหลาย (Diversity) ---
+                                        const uniqueProjects = new Set();
+                                        const diverseResults: Candidate[] = [];
+
+                                        for (const c of candidates) {
+                                            const projectName = c.name
+                                                .split(' (')[0]
+                                                .replace(/ตึก\s*\w+/g, '')
+                                                .replace(/ชั้น\s*\d+/g, '')
+                                                .trim();
+
+                                            if (!uniqueProjects.has(projectName)) {
+                                                diverseResults.push(c);
+                                                uniqueProjects.add(projectName);
+                                            }
+                                            if (diverseResults.length >= 5) break;
+                                        }
+
+                                        const topResults = diverseResults.length > 0 ? diverseResults : candidates.slice(0, 5);
 
                                         const filteredDocsForLog: RetrievedDoc[] = topResults.map((c, i) => {
                                             const originalDoc = rawDocs.find(r => r.name === c.name);
@@ -742,7 +831,7 @@ export async function POST(request: Request) {
                             if (
                                 toolName === 'search_dorm_database' &&
                                 messageHasDistance &&
-                                !args.target_dorm_name 
+                                !args.target_dorm_name
                             ) {
                                 console.warn('⚠️ Intent mismatch detected: distance query routed to search_dorm_database');
                                 toolResultText +=
@@ -756,11 +845,21 @@ export async function POST(request: Request) {
                                 tool_call_id: toolCall.id,
                                 content: toolResultText
                             });
-                        } 
-                    } 
+                        }
+                    }
 
+                    // ── เปลี่ยนจาก Error Message เป็นการพยายามตอบจาก Context ──
                     if (loopCount >= MAX_LOOPS && !finalAnswer) {
-                        finalAnswer = "ขออภัยครับ ระบบประมวลผลข้อมูลนานเกินไป โปรดตั้งคำถามใหม่อีกครั้งครับ";
+                        // แทนที่จะตอบว่านานเกินไป สั่งให้ AI สรุปจากข้อมูลที่บันทึกไว้ใน messagesForAgent เลย
+                        const finalAttempt = await openai.chat.completions.create({
+                            model: 'typhoon-v2.5-30b-a3b-instruct',
+                            messages: [
+                                ...messagesForAgent,
+                                { role: 'user', content: 'สรุปคำตอบจากข้อมูลทั้งหมดที่มีตอนนี้ตามรูปแบบที่กำหนด (🏠)' }
+                            ],
+                            temperature: 0.1,
+                        });
+                        finalAnswer = finalAttempt.choices[0].message.content || "ขออภัยครับ ไม่พบข้อมูลที่ต้องการ กรุณาลองใหม่อีกครั้ง";
                     }
 
                     let answer = finalAnswer.replace(/\\n/g, '\n').replace(/\n{3,}/g, '\n\n');
