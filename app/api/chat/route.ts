@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import OpenAI from 'openai';
+import { InferenceClient } from '@huggingface/inference';
 import { RAGLogger } from '@/lib/rag-logger';
 import type { RetrievedDoc } from '@/lib/rag-logger';
 
@@ -10,56 +11,32 @@ const openai = new OpenAI({
     baseURL: 'https://api.opentyphoon.ai/v1',
 });
 
-// ── HuggingFace Inference API for embeddings ──────────────────
+// ── HuggingFace Inference SDK for embeddings ──────────────────
 // Uses the same model (paraphrase-multilingual-MiniLM-L12-v2, 384-dim)
-// via HTTP instead of local ONNX — compatible with Vercel serverless.
+// via the official @huggingface/inference SDK — compatible with Vercel serverless.
 const HF_EMBEDDING_MODEL = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2';
-const HF_API_URL = `https://api-inference.huggingface.co/pipeline/feature-extraction/${HF_EMBEDDING_MODEL}`;
+const hfClient = new InferenceClient(process.env.HF_API_TOKEN || '');
 
 async function getEmbedding(text: string): Promise<number[]> {
-    const response = await fetch(HF_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...(process.env.HF_API_TOKEN ? { 'Authorization': `Bearer ${process.env.HF_API_TOKEN}` } : {}),
-        },
-        body: JSON.stringify({
-            inputs: text,
-            options: { wait_for_model: true },
-        }),
+    const result = await hfClient.featureExtraction({
+        model: HF_EMBEDDING_MODEL,
+        inputs: text,
     });
 
-    if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`HuggingFace Embedding API error (${response.status}): ${errText}`);
-    }
-
-    const result = await response.json();
-
-    // The API returns a nested array for feature-extraction; we need to mean-pool + normalize
-    if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
-        // result shape: [1, seq_len, 384] → mean pool over seq_len
-        const tokens: number[][] = result[0];
-        const dim = tokens[0].length;
-        const mean = new Array(dim).fill(0);
-        for (const tok of tokens) {
-            for (let i = 0; i < dim; i++) mean[i] += tok[i];
-        }
-        const norm = Math.sqrt(mean.reduce((s, v) => s + (v / tokens.length) ** 2, 0));
-        return mean.map(v => (v / tokens.length) / (norm || 1));
-    }
-
-    // If the API returns a flat array directly (sentence-transformers pipeline)
+    // The SDK returns a flat number[] (384-dim) for sentence-transformers models
     if (Array.isArray(result) && typeof result[0] === 'number') {
-        return result;
+        return result as number[];
     }
 
-    // Fallback: first element if array of arrays
+    // Fallback: nested array → take first element
     if (Array.isArray(result) && Array.isArray(result[0])) {
-        return result[0];
+        // If doubly nested [seq_len, 384] → mean pool
+        if (Array.isArray(result[0]) && typeof (result[0] as number[])[0] === 'number') {
+            return result[0] as number[];
+        }
     }
 
-    throw new Error('Unexpected embedding response format');
+    throw new Error('Unexpected embedding response format from HuggingFace SDK');
 }
 
 // ── BU Coordinates ─────────────────────────────────────────────
