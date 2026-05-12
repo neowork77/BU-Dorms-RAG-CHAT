@@ -106,14 +106,14 @@ export function LandingContent() {
 
           <div data-reveal="" className="w-32 h-32 mb-8 rounded-full bg-surface-container-lowest shadow-[0_20px_40px_rgba(184,228,213,0.3)] flex items-center justify-center p-2 border-[3px] border-surface">
             <img
-              alt="Puffin Mascot"
+              alt="BU Dorms Mascot"
               className="w-full h-full object-cover rounded-full"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmJvQr_APtG54fqavHn3DLw8z6CRhPEAr4TtIYa-P-Z1-D8nsFEX0VV7Jk1gCU9qFe3eK6BBm-8I7RVsrroEsqVnjQF-fBtxMqmLZqp4Fo6g7nmHXSNgShPh_1ADb5vbT7QU8Sh1H2fo5hFqouhHrseOQzWDCr955v7EQZxklgc4MVpJHxaCowKKfkd-gUB1eoKJsfC_xaTBOdnB03ZNecWh1GOA8bJiimdXSnAZrvd18tTCkOJBGeKke75J1L0DGEmyUZQHRTd_EO"
             />
           </div>
 
           <h1 data-reveal="" data-reveal-delay="100" className="text-[36px] leading-[1.2] tracking-[-0.02em] font-[800] text-on-surface max-w-3xl mb-6">
-            Meet Puffin AI: Your <br />
+            Meet BU Dorms: Your <br />
             <span className="text-primary">Soft &amp; Smart Companion</span>
           </h1>
 
@@ -143,7 +143,7 @@ export function LandingContent() {
         <section id="features" className="max-w-[1200px] mx-auto px-6 py-20">
           <div className="text-center mb-16">
             <span data-reveal="" className="text-[12px] leading-none tracking-[0.05em] font-semibold uppercase text-secondary bg-secondary-container px-4 py-1.5 rounded-full inline-block mb-4 font-[family-name:var(--font-lexend)]">
-              Why Puffin?
+              Why BU Dorms?
             </span>
             <h2 data-reveal="" data-reveal-delay="100" className="text-[24px] leading-[1.3] font-bold text-on-surface">
               Powerful features. Gentle design.
@@ -252,7 +252,7 @@ export function LandingContent() {
                   Ask
                 </h3>
                 <p className="text-[14px] leading-[1.6] text-on-surface-variant">
-                  Chat naturally with Puffin about your documents.
+                  Chat naturally with BU Dorms about your documents.
                 </p>
               </div>
 
@@ -285,14 +285,14 @@ export function LandingContent() {
               Ready to start your squishy journey?
             </h2>
             <p className="text-[18px] leading-[1.6] font-medium text-on-primary-container/80 mb-10 relative z-10 max-w-lg">
-              Join Puffin AI today and transform the way you interact with your
+              Join BU Dorms today and transform the way you interact with your
               knowledge base.
             </p>
             <Link
               href="/signup"
               className="relative z-10 bg-surface-container-lowest text-primary font-bold text-[18px] px-10 py-4 rounded-full shadow-[0_8px_24px_rgba(61,102,90,0.15)] hover:scale-95 transition-transform duration-200"
             >
-              Join Puffin AI
+              Join BU Dorms
             </Link>
           </div>
         </section>
@@ -302,7 +302,7 @@ export function LandingContent() {
       <footer data-reveal="" className="bg-primary-container/10 rounded-t-[40px] mt-20 border-t border-primary-container/30">
         <div className="flex flex-col md:flex-row justify-between items-center w-full px-10 py-12 gap-8 max-w-7xl mx-auto">
           <div className="text-lg font-bold text-on-surface-variant">
-            © 2026 Puffin AI. Stay Squishy.
+            © 2026 BU Dorms. Stay Squishy.
           </div>
           {/* <div className="flex flex-wrap justify-center gap-6 text-xs font-semibold uppercase tracking-widest text-outline font-[family-name:var(--font-lexend)]">
             <a href="#" className="hover:text-primary transition-colors">

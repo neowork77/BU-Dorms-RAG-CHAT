@@ -25,13 +25,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Load saved preference
   useEffect(() => {
-    const saved = localStorage.getItem("puffin-theme") as Theme | null;
+    const saved = localStorage.getItem("bu-dorms-theme") as Theme | null;
     if (saved) setTheme(saved);
   }, []);
 
   // Apply theme class
   useEffect(() => {
-    localStorage.setItem("puffin-theme", theme);
+    localStorage.setItem("bu-dorms-theme", theme);
     const root = document.documentElement;
 
     const applyTheme = (isDark: boolean) => {

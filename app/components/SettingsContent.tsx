@@ -223,7 +223,7 @@ export function SettingsContent() {
               <div className="flex-1 w-full space-y-4">
                 <div>
                   <h3 className="text-[24px] leading-[1.3] font-bold text-on-surface">Profile Identity</h3>
-                  <p className="text-sm text-on-surface-variant">How Puffin AI addresses you.</p>
+                  <p className="text-sm text-on-surface-variant">How BU Dorms addresses you.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">

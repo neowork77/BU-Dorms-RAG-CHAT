@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "../components/Sidebar";
 import { MobileTopBar } from "../components/MobileTopBar";
+import { ChatHistoryProvider } from "../contexts/ChatHistoryContext";
 
 export default function AppLayout({
   children,
@@ -47,19 +48,21 @@ export default function AppLayout({
   }
 
   return (
-    <div className="h-full w-full overflow-hidden bg-background text-on-background flex">
-      <Sidebar />
-      <main className="flex-1 flex flex-col relative min-w-0 bg-background">
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
-          style={{
-            backgroundImage: "radial-gradient(var(--md-primary) 2px, transparent 2px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-        <MobileTopBar />
-        {children}
-      </main>
-    </div>
+    <ChatHistoryProvider>
+      <div className="h-full w-full overflow-hidden bg-background text-on-background flex">
+        <Sidebar />
+        <main className="flex-1 flex flex-col relative min-w-0 bg-background">
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            style={{
+              backgroundImage: "radial-gradient(var(--md-primary) 2px, transparent 2px)",
+              backgroundSize: "32px 32px",
+            }}
+          />
+          <MobileTopBar />
+          {children}
+        </main>
+      </div>
+    </ChatHistoryProvider>
   );
 }

@@ -14,8 +14,8 @@ const lexend = Lexend({
 });
 
 export const metadata: Metadata = {
-  title: "Puffin AI - RAG Chat",
-  description: "Soft utility chat homepage for Puffin AI",
+  title: "BU Dorms - RAG Chat",
+  description: "Soft utility chat homepage for BU Dorms",
 };
 
 export const viewport = {

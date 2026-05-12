@@ -28,7 +28,7 @@ export function TopNavBar({ onNavClick, minimal }: TopNavBarProps) {
       <div className="flex justify-between items-center w-full h-full px-6 max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <span className="text-2xl font-[800] text-on-surface tracking-tighter">
-            Puffin AI
+            BU Dorms
           </span>
         </Link>
         {!minimal && (

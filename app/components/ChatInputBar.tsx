@@ -99,17 +99,11 @@ export function ChatInputBar({
   return (
     <div className="absolute bottom-0 left-0 w-full z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-10 pb-6 md:pb-8 px-4 flex justify-center">
       <div className="w-full max-w-5xl">
-        <div className="bg-surface-container-lowest rounded-full p-2 flex items-center border-2 border-surface-variant shadow-[0_10px_30px_rgba(184,228,213,0.15)] focus-within:border-primary-container transition-colors">
-          {/* Attachment Button */}
-          <button className="cursor-pointer w-12 h-12 shrink-0 rounded-full text-tertiary hover:bg-tertiary-container/50 flex items-center justify-center transition-colors">
-            <span className="material-symbols-outlined text-2xl">
-              add_circle
-            </span>
-          </button>
+        <div className="bg-surface-container-lowest rounded-full p-2 flex items-center border-2 border-surface-variant shadow-[0_10px_30px_rgba(184,228,213,0.15)] focus-within:border-primary-container transition-colors pl-4">
           {/* Input Field */}
           <input
             className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[16px] leading-[1.6] px-4 placeholder:text-outline-variant text-on-surface"
-            placeholder="Ask Puffin AI or mention a file..."
+            placeholder="หาหอพักที่โดนใจ... ลองถาม BU Dorms ดูสิ"
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}

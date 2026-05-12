@@ -53,7 +53,7 @@ export function LoadingScreen({
         {/* Mascot Container */}
         <div className="relative rounded-full bg-surface-container-lowest shadow-[0_8px_32px_rgba(184,228,213,0.5)] flex items-center justify-center p-1 border-[3px] border-surface z-10 w-full h-full animate-bounce">
           <img
-            alt="Puffin Loading"
+            alt="BU Dorms Loading"
             className="w-full h-full object-cover rounded-full"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmJvQr_APtG54fqavHn3DLw8z6CRhPEAr4TtIYa-P-Z1-D8nsFEX0VV7Jk1gCU9qFe3eK6BBm-8I7RVsrroEsqVnjQF-fBtxMqmLZqp4Fo6g7nmHXSNgShPh_1ADb5vbT7QU8Sh1H2fo5hFqouhHrseOQzWDCr955v7EQZxklgc4MVpJHxaCowKKfkd-gUB1eoKJsfC_xaTBOdnB03ZNecWh1GOA8bJiimdXSnAZrvd18tTCkOJBGeKke75J1L0DGEmyUZQHRTd_EO"
           />

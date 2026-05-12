@@ -1,8 +1,8 @@
-# 🐧 Puffin AI
+# 🏢 BU Dorms
 
 **Your Soft & Smart Companion**
 
-Puffin AI is a high-performance RAG (Retrieval-Augmented Generation) chatbot wrapped in a squishy, friendly, and accessible interface. It allows you to talk to your documents effortlessly, completely removing the anxiety of using complex AI tools.
+BU Dorms is a high-performance RAG (Retrieval-Augmented Generation) chatbot wrapped in a squishy, friendly, and accessible interface. It allows you to talk to your documents effortlessly, completely removing the anxiety of using complex AI tools.
 
 ## ✨ Features
 

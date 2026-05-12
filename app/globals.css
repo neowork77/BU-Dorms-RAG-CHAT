@@ -4,103 +4,103 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --md-primary: #3d665a;
+  --md-primary: #6B3FA0;
   --md-on-primary: #ffffff;
-  --md-primary-container: #b8e4d5;
-  --md-on-primary-container: #3f675b;
-  --md-primary-fixed: #c0ecdd;
-  --md-primary-fixed-dim: #a4d0c1;
-  --md-on-primary-fixed: #002019;
-  --md-on-primary-fixed-variant: #254e43;
-  --md-secondary: #78555b;
+  --md-primary-container: #EDDCFF;
+  --md-on-primary-container: #6B3FA0;
+  --md-primary-fixed: #F2E2FF;
+  --md-primary-fixed-dim: #D6B8F5;
+  --md-on-primary-fixed: #24005A;
+  --md-on-primary-fixed-variant: #533587;
+  --md-secondary: #6D5E00;
   --md-on-secondary: #ffffff;
-  --md-secondary-container: #ffd2d8;
-  --md-on-secondary-container: #7a585d;
-  --md-secondary-fixed: #ffd9de;
-  --md-secondary-fixed-dim: #e7bcc1;
-  --md-on-secondary-fixed: #2d1419;
-  --md-on-secondary-fixed-variant: #5e3e43;
-  --md-tertiary: #5e5b7a;
+  --md-secondary-container: #FFF0A0;
+  --md-on-secondary-container: #6D5E00;
+  --md-secondary-fixed: #FFF1B0;
+  --md-secondary-fixed-dim: #E2CC3A;
+  --md-on-secondary-fixed: #211B00;
+  --md-on-secondary-fixed-variant: #534600;
+  --md-tertiary: #7A4E7E;
   --md-on-tertiary: #ffffff;
-  --md-tertiary-container: #dcd7fb;
-  --md-on-tertiary-container: #5f5c7b;
-  --md-tertiary-fixed: #e4dfff;
-  --md-tertiary-fixed-dim: #c7c2e6;
-  --md-on-tertiary-fixed: #1b1833;
-  --md-on-tertiary-fixed-variant: #464361;
+  --md-tertiary-container: #FFD6FE;
+  --md-on-tertiary-container: #7A4E7E;
+  --md-tertiary-fixed: #FFD6FE;
+  --md-tertiary-fixed-dim: #E8B5E8;
+  --md-on-tertiary-fixed: #2E0834;
+  --md-on-tertiary-fixed-variant: #604065;
   --md-error: #ba1a1a;
   --md-on-error: #ffffff;
   --md-error-container: #ffdad6;
   --md-on-error-container: #93000a;
-  --md-background: #f9f9f7;
-  --md-on-background: #1a1c1b;
-  --md-surface: #f9f9f7;
-  --md-on-surface: #1a1c1b;
-  --md-surface-variant: #e2e3e0;
-  --md-on-surface-variant: #414845;
-  --md-surface-dim: #dadad8;
-  --md-surface-bright: #f9f9f7;
-  --md-surface-tint: #3d665a;
-  --md-surface-container: #eeeeec;
-  --md-surface-container-low: #f3f4f1;
-  --md-surface-container-high: #e8e8e6;
-  --md-surface-container-highest: #e2e3e0;
+  --md-background: #FFFBFF;
+  --md-on-background: #1D1B20;
+  --md-surface: #FFFBFF;
+  --md-on-surface: #1D1B20;
+  --md-surface-variant: #E8E0EB;
+  --md-on-surface-variant: #4A454E;
+  --md-surface-dim: #DED8E0;
+  --md-surface-bright: #FFFBFF;
+  --md-surface-tint: #6B3FA0;
+  --md-surface-container: #F3EDF5;
+  --md-surface-container-low: #F9F3FA;
+  --md-surface-container-high: #EDE7EF;
+  --md-surface-container-highest: #E8E0EB;
   --md-surface-container-lowest: #ffffff;
-  --md-outline: #717975;
-  --md-outline-variant: #c0c8c4;
-  --md-inverse-surface: #2f3130;
-  --md-inverse-on-surface: #f0f1ef;
-  --md-inverse-primary: #a4d0c1;
+  --md-outline: #7B757F;
+  --md-outline-variant: #CCC4CF;
+  --md-inverse-surface: #322F35;
+  --md-inverse-on-surface: #F5EFF7;
+  --md-inverse-primary: #D6B8F5;
 }
 
 .dark {
-  --md-primary: #a4d0c1;
-  --md-on-primary: #0b3a2e;
-  --md-primary-container: #254e43;
-  --md-on-primary-container: #c0ecdd;
-  --md-primary-fixed: #c0ecdd;
-  --md-primary-fixed-dim: #a4d0c1;
-  --md-on-primary-fixed: #002019;
-  --md-on-primary-fixed-variant: #254e43;
-  --md-secondary: #e7bcc1;
-  --md-on-secondary: #44292e;
-  --md-secondary-container: #5e3e43;
-  --md-on-secondary-container: #ffd9de;
-  --md-secondary-fixed: #ffd9de;
-  --md-secondary-fixed-dim: #e7bcc1;
-  --md-on-secondary-fixed: #2d1419;
-  --md-on-secondary-fixed-variant: #5e3e43;
-  --md-tertiary: #c7c2e6;
-  --md-on-tertiary: #302d4a;
-  --md-tertiary-container: #464361;
-  --md-on-tertiary-container: #e4dfff;
-  --md-tertiary-fixed: #e4dfff;
-  --md-tertiary-fixed-dim: #c7c2e6;
-  --md-on-tertiary-fixed: #1b1833;
-  --md-on-tertiary-fixed-variant: #464361;
+  --md-primary: #D6B8F5;
+  --md-on-primary: #3A1170;
+  --md-primary-container: #533587;
+  --md-on-primary-container: #EDDCFF;
+  --md-primary-fixed: #F2E2FF;
+  --md-primary-fixed-dim: #D6B8F5;
+  --md-on-primary-fixed: #24005A;
+  --md-on-primary-fixed-variant: #533587;
+  --md-secondary: #E2CC3A;
+  --md-on-secondary: #393000;
+  --md-secondary-container: #534600;
+  --md-on-secondary-container: #FFF1B0;
+  --md-secondary-fixed: #FFF1B0;
+  --md-secondary-fixed-dim: #E2CC3A;
+  --md-on-secondary-fixed: #211B00;
+  --md-on-secondary-fixed-variant: #534600;
+  --md-tertiary: #E8B5E8;
+  --md-on-tertiary: #47204C;
+  --md-tertiary-container: #604065;
+  --md-on-tertiary-container: #FFD6FE;
+  --md-tertiary-fixed: #FFD6FE;
+  --md-tertiary-fixed-dim: #E8B5E8;
+  --md-on-tertiary-fixed: #2E0834;
+  --md-on-tertiary-fixed-variant: #604065;
   --md-error: #ffb4ab;
   --md-on-error: #690005;
   --md-error-container: #93000a;
   --md-on-error-container: #ffdad6;
-  --md-background: #121412;
-  --md-on-background: #e2e3e0;
-  --md-surface: #121412;
-  --md-on-surface: #e2e3e0;
-  --md-surface-variant: #414845;
-  --md-on-surface-variant: #c0c8c4;
-  --md-surface-dim: #121412;
-  --md-surface-bright: #383b3a;
-  --md-surface-tint: #a4d0c1;
-  --md-surface-container: #1e2120;
-  --md-surface-container-low: #1a1c1b;
-  --md-surface-container-high: #282b2a;
-  --md-surface-container-highest: #333635;
-  --md-surface-container-lowest: #0d0f0e;
-  --md-outline: #8b9390;
-  --md-outline-variant: #414845;
-  --md-inverse-surface: #e2e3e0;
-  --md-inverse-on-surface: #2f3130;
-  --md-inverse-primary: #3d665a;
+  --md-background: #151218;
+  --md-on-background: #E8E0EB;
+  --md-surface: #151218;
+  --md-on-surface: #E8E0EB;
+  --md-surface-variant: #4A454E;
+  --md-on-surface-variant: #CCC4CF;
+  --md-surface-dim: #151218;
+  --md-surface-bright: #3C383F;
+  --md-surface-tint: #D6B8F5;
+  --md-surface-container: #211E24;
+  --md-surface-container-low: #1D1B20;
+  --md-surface-container-high: #2C282F;
+  --md-surface-container-highest: #37333A;
+  --md-surface-container-lowest: #0F0D12;
+  --md-outline: #968E99;
+  --md-outline-variant: #4A454E;
+  --md-inverse-surface: #E8E0EB;
+  --md-inverse-on-surface: #322F35;
+  --md-inverse-primary: #6B3FA0;
 }
 
 @theme inline {
@@ -177,8 +177,49 @@ body {
   background-clip: padding-box;
 }
 
-.soft-shadow { box-shadow: 0 20px 40px rgba(184, 228, 213, 0.08); }
+/* Hide scrollbar for horizontal image strips */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+.soft-shadow { box-shadow: 0 20px 40px rgba(107, 63, 160, 0.08); }
 .dark .soft-shadow { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25); }
+
+/* ── Prose-chat: Bot message text formatting ─────────────────── */
+.prose-chat p {
+  margin-bottom: 0.5em;
+}
+.prose-chat p:last-child {
+  margin-bottom: 0;
+}
+.prose-chat strong, .prose-chat b {
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.prose-chat em, .prose-chat i {
+  font-style: italic;
+  color: var(--md-on-surface-variant);
+}
+.prose-chat ul, .prose-chat ol {
+  padding-left: 1.25em;
+  margin: 0.5em 0;
+}
+.prose-chat li {
+  margin-bottom: 0.25em;
+}
+.prose-chat code {
+  background: var(--md-surface-container-high);
+  color: var(--md-primary);
+  padding: 0.15em 0.4em;
+  border-radius: 0.375rem;
+  font-size: 0.875em;
+}
+.prose-chat blockquote {
+  border-left: 3px solid var(--md-primary-container);
+  padding-left: 0.75em;
+  margin: 0.5em 0;
+  color: var(--md-on-surface-variant);
+  font-style: italic;
+}
 
 .material-symbols-outlined {
   font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
@@ -238,21 +279,40 @@ body {
   animation: chatMessageIn 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-4px); }
+/* ── RAG Pipeline Animations ──────────────────────────────────── */
+@keyframes ragStageGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--md-primary-container); }
+  50% { box-shadow: 0 0 0 6px transparent; }
 }
 
-.typing-dot {
-  animation: typingBounce 1.4s ease-in-out infinite;
+.rag-stage-active {
+  animation: ragStageGlow 2s ease-in-out infinite;
 }
 
-.typing-dot:nth-child(2) {
-  animation-delay: 0.16s;
+@keyframes ragIconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
-.typing-dot:nth-child(3) {
-  animation-delay: 0.32s;
+.rag-icon-pulse {
+  animation: ragIconPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ragSpin {
+  to { transform: rotate(360deg); }
+}
+
+.rag-spinner {
+  animation: ragSpin 0.8s linear infinite;
+}
+
+@keyframes ragConnectorPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.rag-connector-pulse {
+  animation: ragConnectorPulse 1.2s ease-in-out infinite;
 }
 
 @keyframes soundwave {
