@@ -16,6 +16,9 @@ const lexend = Lexend({
 export const metadata: Metadata = {
   title: "BU Dorms - RAG Chat",
   description: "Soft utility chat homepage for BU Dorms",
+  icons: {
+    icon: "/assets/BU_Dorms_LOGO.webp",
+  },
 };
 
 export const viewport = {

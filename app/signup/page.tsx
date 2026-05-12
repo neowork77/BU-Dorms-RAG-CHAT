@@ -94,12 +94,20 @@ export default function SignupPage() {
   // ── Google Sign In ──────────────────────────────────────────
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true);
+    
+    // ตรวจสอบว่ารันบน localhost หรือไม่
+    const isLocalhost = window.location.hostname === 'localhost';
+    const redirectBase = isLocalhost 
+      ? 'http://localhost:3000' 
+      : 'https://budorms.vercel.app';
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${redirectBase}/auth/callback`,
       },
     });
+    
     if (error) {
       console.error("Google sign-in error:", error.message);
       setLoading(false);
