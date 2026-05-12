@@ -120,8 +120,19 @@ export async function POST(request: Request) {
         .single();
 
       if (!sessionCheck) {
-        console.error(`add_messages: session ${session_id} not found — skipping insert`);
-        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        console.log(`add_messages: session ${session_id} not found — auto-creating`);
+        // Fallback title from the first message
+        const firstMsgText = messages[0]?.text || messages[0]?.body || 'New Chat';
+        const title = firstMsgText.length > 40 ? firstMsgText.slice(0, 40) + "…" : firstMsgText;
+
+        const { error: createError } = await supabase
+          .from('chat_sessions')
+          .insert({ id: session_id, user_id: user.id, title });
+
+        if (createError) {
+          console.error('Auto-create session error:', createError);
+          return NextResponse.json({ error: 'Failed to create session automatically' }, { status: 500 });
+        }
       }
 
       const rows = messages.map((msg: any) => ({
