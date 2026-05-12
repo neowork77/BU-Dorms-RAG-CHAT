@@ -106,10 +106,32 @@ export function ChatHistoryProvider({ children }: { children: ReactNode }) {
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(id);
 
-    // Create session on server — store the promise so add_messages can await it
-    const createPromise = apiFetch('create_session', { id, title });
+    // Create session on server — wrap in a proper Promise that only resolves on success
+    const createPromise = new Promise<void>(async (resolve, reject) => {
+      try {
+        const result = await apiFetch('create_session', { id, title });
+        if (result?.success) {
+          resolve();
+        } else {
+          console.error(`[ChatHistory] create_session failed for ${id}, retrying...`);
+          // Retry once
+          const retry = await apiFetch('create_session', { id, title });
+          if (retry?.success) {
+            resolve();
+          } else {
+            reject(new Error(`Failed to create session ${id} after retry`));
+          }
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+
     pendingSessionRef.current.set(id, createPromise);
-    createPromise.then(() => pendingSessionRef.current.delete(id));
+    // Only remove from pending map on success; keep it on failure so callers know it failed
+    createPromise
+      .then(() => pendingSessionRef.current.delete(id))
+      .catch(() => pendingSessionRef.current.delete(id));
 
     return id;
   }, []);
@@ -153,7 +175,9 @@ export function ChatHistoryProvider({ children }: { children: ReactNode }) {
       // Wait for pending session creation before adding messages
       const pending = pendingSessionRef.current.get(id);
       if (pending) {
-        pending.then(() => apiFetch('add_messages', { session_id: id, messages: newMessages }));
+        pending
+          .then(() => apiFetch('add_messages', { session_id: id, messages: newMessages }))
+          .catch((err) => console.error(`[ChatHistory] Skipping add_messages — session creation failed:`, err));
       } else {
         apiFetch('add_messages', { session_id: id, messages: newMessages });
       }

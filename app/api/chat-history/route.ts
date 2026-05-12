@@ -111,6 +111,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'session_id and messages[] are required' }, { status: 400 });
       }
 
+      // Verify the session exists before inserting messages (prevents FK violation)
+      const { data: sessionCheck } = await supabase
+        .from('chat_sessions')
+        .select('id')
+        .eq('id', session_id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!sessionCheck) {
+        console.error(`add_messages: session ${session_id} not found — skipping insert`);
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
+
       const rows = messages.map((msg: any) => ({
         id: msg.id,
         session_id,
