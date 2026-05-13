@@ -14,8 +14,8 @@ const lexend = Lexend({
 });
 
 export const metadata: Metadata = {
-  title: "BU Dorms - RAG Chat",
-  description: "Soft utility chat homepage for BU Dorms",
+  title: "BU Dorms - ระบบแนะนำหอพักม.กรุงเทพ",
+  description: "หาหอพัก ม.กรุงเทพ ที่ใช่สำหรับคุณ ผ่านการโต้ตอบแบบเรียลไทม์กับผู้ช่วย AI",
   icons: {
     icon: "/assets/BU_Dorms_LOGO.webp",
   },
