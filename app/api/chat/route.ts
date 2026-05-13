@@ -334,6 +334,7 @@ const agentTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
             parameters: {
                 type: "object",
                 properties: {
+                    min_price: { type: "number", description: "ราคาขั้นต่ำต่อเดือน (บาท) ถ้าไม่ระบุให้ส่ง null" },
                     max_price: { type: "number", description: "ราคาสูงสุดต่อเดือน (บาท) ถ้าไม่ระบุให้ส่ง null" },
                     sort_by: { type: "string", enum: ["distance", "price_asc", "price_desc"], description: "การเรียงลำดับ" },
                     target_dorm_name: { type: "string", description: "ชื่อหอพักที่ผู้ใช้ถามเจาะจง เช่น 'Plum Condo' หรือ 'kave space' ถ้าไม่ระบุให้ส่ง null" }
@@ -351,6 +352,7 @@ const agentTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 type: "object",
                 properties: {
                     max_distance_km: { type: "number", description: "ระยะทางสูงสุดจาก ม.กรุงเทพ (กิโลเมตร) เช่น 1.0, 2.5" },
+                    min_price: { type: "number", description: "ราคาขั้นต่ำต่อเดือน (บาท) ถ้าไม่ระบุให้ส่ง null" },
                     max_price: { type: "number", description: "ราคาสูงสุดต่อเดือน (บาท) ถ้าไม่ระบุให้ส่ง null" },
                     sort_by: { type: "string", enum: ["distance", "price_asc", "price_desc"] }
                 },
@@ -383,18 +385,10 @@ const agentTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 // ════════════════════════════════════════════════════════════════
 export async function POST(request: Request) {
     try {
-        const { message, history = [], session_id } = await request.json();
+        const { message, history = [] } = await request.json();
         if (!message) {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 });
         }
-
-        // Get authenticated user (non-blocking — log works without auth too)
-        let userId: string | null = null;
-        try {
-            const authSupabase = await createClient();
-            const { data: { user } } = await authSupabase.auth.getUser();
-            userId = user?.id ?? null;
-        } catch { /* ignore auth errors for logging */ }
 
         const conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
             (Array.isArray(history) ? history : [])
@@ -410,10 +404,7 @@ export async function POST(request: Request) {
                 };
 
                 try {
-                    const logger = new RAGLogger(message, {
-                        userId: userId ?? undefined,
-                        sessionId: session_id ?? undefined,
-                    });
+                    const logger = new RAGLogger(message);
 
                     logger.startStage('reasoning');
                     send({ stage: 'reasoning' });
@@ -525,6 +516,8 @@ export async function POST(request: Request) {
                             // TOOL 1: search_dorm_database
                             // ══════════════════════════════════════════
                             if (toolName === "search_dorm_database") {
+                                const minPrice: number | null = (args.min_price && !isNaN(parseInt(String(args.min_price).replace(/,/g, ''), 10)))
+                                    ? parseInt(String(args.min_price).replace(/,/g, ''), 10) : null;
                                 const maxPrice: number | null = (args.max_price && !isNaN(parseInt(String(args.max_price).replace(/,/g, ''), 10)))
                                     ? parseInt(String(args.max_price).replace(/,/g, ''), 10) : null;
                                 const sortBy: 'distance' | 'price_asc' | 'price_desc' = args.sort_by || 'distance';
@@ -552,6 +545,10 @@ export async function POST(request: Request) {
                                 } else {
                                     let candidates = [...rawCandidates];
 
+                                    // กรองข้อมูลด้วยช่วงราคา (Range)
+                                    if (minPrice !== null) {
+                                        candidates = candidates.filter(c => c.price_val >= minPrice);
+                                    }
                                     if (maxPrice !== null) {
                                         candidates = candidates.filter(c => c.price_val <= maxPrice);
                                     }
@@ -630,6 +627,8 @@ export async function POST(request: Request) {
                             else if (toolName === "filter_by_distance") {
                                 const maxDistKm: number | null = (args.max_distance_km && !isNaN(parseFloat(String(args.max_distance_km))))
                                     ? parseFloat(String(args.max_distance_km)) : null;
+                                const minPrice: number | null = (args.min_price && !isNaN(parseInt(String(args.min_price).replace(/,/g, ''), 10)))
+                                    ? parseInt(String(args.min_price).replace(/,/g, ''), 10) : null;
                                 const maxPrice: number | null = (args.max_price && !isNaN(parseInt(String(args.max_price).replace(/,/g, ''), 10)))
                                     ? parseInt(String(args.max_price).replace(/,/g, ''), 10) : null;
                                 const sortBy: 'distance' | 'price_asc' | 'price_desc' = args.sort_by || 'distance';
@@ -660,6 +659,11 @@ export async function POST(request: Request) {
                                         candidates = candidates.filter(c =>
                                             isFinite(c.distance_km) && c.distance_km <= maxDistKm
                                         );
+                                        
+                                        // กรองข้อมูลด้วยช่วงราคา (Range)
+                                        if (minPrice !== null) {
+                                            candidates = candidates.filter(c => c.price_val >= minPrice);
+                                        }
                                         if (maxPrice !== null) {
                                             candidates = candidates.filter(c => c.price_val <= maxPrice);
                                         }
@@ -865,10 +869,8 @@ export async function POST(request: Request) {
                     }
                     answer = newLines.join('\n');
 
-                    // Log the final AI response (ensures both tool and non-tool paths are captured)
-                    logger.logLLMResponse(answer);
                     await logger.finalize();
-                    send({ stage: 'done', result: answer, dorms: finalDorms, request_id: logger.getRequestId() });
+                    send({ stage: 'done', result: answer, dorms: finalDorms });
                     controller.close();
 
                 } catch (err: any) {
