@@ -63,7 +63,6 @@ export function MobileTopBar() {
         <LoadingScreen 
           message="กำลังออกจากระบบ..." 
           onComplete={() => router.replace("/")}
-          durationInMs={1000}
         />
       )}
       <header className="lg:hidden flex items-center justify-between w-full px-4 py-3 bg-surface-container-lowest/80 backdrop-blur-md border-b border-surface-variant/30 z-40 sticky top-0 shadow-sm">

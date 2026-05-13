@@ -175,7 +175,6 @@ export function SettingsContent() {
         <LoadingScreen 
           message="กำลังออกจากระบบ..." 
           onComplete={() => router.replace("/")}
-          durationInMs={1000}
         />
       )}
       {/* Content Area */}

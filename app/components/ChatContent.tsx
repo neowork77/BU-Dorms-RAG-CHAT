@@ -302,7 +302,7 @@ function AssistantMessage({
           <img
             src="/assets/BU_Dorms_HEADCHAT.webp"
             alt="AI Avatar"
-            className="w-full h-full object-cover"
+            className="w-[70%] h-[70%] object-contain"
           />
         </div>
         <div className="flex flex-col gap-2 sm:gap-2.5 md:gap-3 flex-1 overflow-hidden items-start min-w-0">
@@ -377,7 +377,7 @@ function RAGPipelineIndicator({ currentStage }: { currentStage: RagStage }) {
           <img
             src="/assets/BU_Dorms_HEADCHAT.webp"
             alt="AI Avatar"
-            className="w-full h-full object-cover"
+            className="w-[70%] h-[70%] object-contain"
           />
         </div>
         <div className="bg-surface-container-lowest text-on-surface rounded-2xl sm:rounded-[2rem] rounded-tl-none sm:rounded-tl-none px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 border-primary-container soft-shadow min-w-0 w-full sm:min-w-[280px] md:min-w-[360px]">
@@ -465,11 +465,11 @@ function ChatIdBadge({ sessionId }: { sessionId: string }) {
 function WelcomeGreeting() {
   return (
     <div className="text-center mb-6 sm:mb-8 animate-chat-message-in px-2">
-      <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 bg-primary-container rounded-full flex items-center justify-center shadow-sm overflow-hidden">
+      <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mx-auto mb-4 sm:mb-5 bg-primary-container rounded-full flex items-center justify-center shadow-md overflow-hidden">
         <img
           src="/assets/BU_Dorms_HEADCHAT.webp"
           alt="BU Dorms Logo"
-          className="w-full h-full object-cover"
+          className="w-[85%] h-[85%] object-contain"
         />
       </div>
       <h2 className="text-lg sm:text-xl md:text-[24px] leading-[1.3] font-bold text-primary mb-1 sm:mb-2">

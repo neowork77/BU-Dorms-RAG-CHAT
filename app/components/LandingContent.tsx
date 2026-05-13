@@ -340,7 +340,7 @@ export function LandingContent() {
               <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                 auto_awesome
               </span>
-              Powered by AI
+              Powered by 3 หน่อ AI
             </span>
           </div>
 
@@ -550,7 +550,7 @@ export function LandingContent() {
             © 2026 BU Dorms. ระบบค้นหาหอพักมหาวิทยาลัยกรุงเทพ
           </div>
           <div className="text-xs text-outline">
-            Powered by RAG + AI
+            Powered by 3 หน่อ AI
           </div>
         </div>
       </footer>

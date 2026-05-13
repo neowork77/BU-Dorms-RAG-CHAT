@@ -26,6 +26,9 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        if ((e.target as Element).closest('.menu-toggle-btn')) {
+          return;
+        }
         setMenuOpenId(null);
       }
     }
@@ -83,7 +86,8 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
 
   return (
     <ul className="space-y-1">
-      {sessions.map((session) => {
+      {sessions.map((session, index) => {
+        const isLast = index === sessions.length - 1;
         const isActive = session.id === activeSessionId && (pathname === "/app" || pathname === `/app/${session.id}`);
         const isRenaming = session.id === renamingId;
 
@@ -125,10 +129,10 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
                     e.stopPropagation();
                     setMenuOpenId(menuOpenId === session.id ? null : session.id);
                   }}
-                  className={`shrink-0 rounded-full p-1 transition-all flex items-center justify-center ${
+                  className={`menu-toggle-btn shrink-0 rounded-full p-1 transition-all flex items-center justify-center ${
                     menuOpenId === session.id
                       ? "opacity-100 bg-surface-container-high text-on-surface"
-                      : "opacity-0 group-hover:opacity-100 hover:bg-surface-container-high hover:text-on-surface"
+                      : "opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-surface-container-high hover:text-on-surface"
                   }`}
                 >
                   <span className="material-symbols-outlined text-[18px] cursor-pointer">
@@ -142,7 +146,7 @@ export function ChatHistoryList({ onItemClick }: { onItemClick?: () => void }) {
             {menuOpenId === session.id && (
               <div
                 ref={menuRef}
-                className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-2xl shadow-lg border border-outline-variant/20 py-1.5 z-50 min-w-[140px] animate-fade-in"
+                className={`absolute right-0 ${isLast ? 'bottom-full mb-1' : 'top-full mt-1'} bg-surface-container-lowest rounded-2xl shadow-lg border border-outline-variant/20 py-1.5 z-50 min-w-[140px] animate-fade-in`}
               >
                 <button
                   onClick={(e) => {
