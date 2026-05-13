@@ -385,7 +385,15 @@ const agentTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 // ════════════════════════════════════════════════════════════════
 export async function POST(request: Request) {
     try {
-        const { message, history = [] } = await request.json();
+        const { message, history = [], session_id } = await request.json();
+
+        // Get authenticated user (non-blocking — log works without auth too)
+        let userId: string | null = null;
+        try {
+            const authSupabase = await createClient();
+            const { data: { user } } = await authSupabase.auth.getUser();
+            userId = user?.id ?? null;
+        } catch { /* ignore auth errors for logging */ }
         if (!message) {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 });
         }
@@ -404,7 +412,10 @@ export async function POST(request: Request) {
                 };
 
                 try {
-                    const logger = new RAGLogger(message);
+                    const logger = new RAGLogger(message, {
+                        userId: userId ?? undefined,
+                        sessionId: session_id ?? undefined,
+                    });
 
                     logger.startStage('reasoning');
                     send({ stage: 'reasoning' });
