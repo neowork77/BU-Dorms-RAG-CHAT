@@ -383,10 +383,18 @@ const agentTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 // ════════════════════════════════════════════════════════════════
 export async function POST(request: Request) {
     try {
-        const { message, history = [] } = await request.json();
+        const { message, history = [], session_id } = await request.json();
         if (!message) {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 });
         }
+
+        // Get authenticated user (non-blocking — log works without auth too)
+        let userId: string | null = null;
+        try {
+            const authSupabase = await createClient();
+            const { data: { user } } = await authSupabase.auth.getUser();
+            userId = user?.id ?? null;
+        } catch { /* ignore auth errors for logging */ }
 
         const conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
             (Array.isArray(history) ? history : [])
@@ -402,7 +410,10 @@ export async function POST(request: Request) {
                 };
 
                 try {
-                    const logger = new RAGLogger(message);
+                    const logger = new RAGLogger(message, {
+                        userId: userId ?? undefined,
+                        sessionId: session_id ?? undefined,
+                    });
 
                     logger.startStage('reasoning');
                     send({ stage: 'reasoning' });
@@ -854,8 +865,10 @@ export async function POST(request: Request) {
                     }
                     answer = newLines.join('\n');
 
+                    // Log the final AI response (ensures both tool and non-tool paths are captured)
+                    logger.logLLMResponse(answer);
                     await logger.finalize();
-                    send({ stage: 'done', result: answer, dorms: finalDorms });
+                    send({ stage: 'done', result: answer, dorms: finalDorms, request_id: logger.getRequestId() });
                     controller.close();
 
                 } catch (err: any) {
