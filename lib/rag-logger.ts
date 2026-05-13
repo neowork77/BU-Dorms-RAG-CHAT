@@ -33,11 +33,14 @@ interface StageEntry {
 export interface RAGLogEntry {
     request_id: string;
     timestamp: string;
+    user_id: string | null;
+    session_id: string | null;
     query: string;
     stages: StageEntry[];
     reasoning: ReasoningInfo | null;
     retrieved_docs: RetrievedDoc[];
     llm_prompt_summary: string | null;
+    llm_response: string | null;
     llm_response_length: number | null;
     total_duration_ms: number | null;
     error: string | null;
@@ -75,6 +78,8 @@ const STAGE_STYLES: Record<RAGStage, { icon: string; color: string; bg: string; 
 // ── RAGLogger class ────────────────────────────────────────────
 export class RAGLogger {
     private requestId: string;
+    private userId: string | null = null;
+    private sessionId: string | null = null;
     private query: string;
     private startTime: number;
     private stages: StageEntry[] = [];
@@ -82,15 +87,28 @@ export class RAGLogger {
     private reasoning: ReasoningInfo | null = null;
     private retrievedDocs: RetrievedDoc[] = [];
     private llmPromptSummary: string | null = null;
+    private llmResponse: string | null = null;
     private llmResponseLength: number | null = null;
     private errorMsg: string | null = null;
 
-    constructor(query: string) {
+    constructor(query: string, opts?: { userId?: string; sessionId?: string }) {
         this.requestId = this.generateId();
         this.query = query;
+        this.userId = opts?.userId ?? null;
+        this.sessionId = opts?.sessionId ?? null;
         this.startTime = performance.now();
 
         this.printHeader();
+    }
+
+    /** Set/update the session ID (useful when session is created after logger init) */
+    setSessionId(id: string) {
+        this.sessionId = id;
+    }
+
+    /** Get the unique request ID for this pipeline run */
+    getRequestId(): string {
+        return this.requestId;
     }
 
     // ── Stage tracking ─────────────────────────────────────────
@@ -225,6 +243,7 @@ export class RAGLogger {
     }
 
     logLLMResponse(response: string) {
+        this.llmResponse = response;
         this.llmResponseLength = response.length;
 
         console.log(
@@ -257,6 +276,8 @@ export class RAGLogger {
         const logEntry: RAGLogEntry = {
             request_id: this.requestId,
             timestamp: new Date().toISOString(),
+            user_id: this.userId,
+            session_id: this.sessionId,
             query: this.query,
             stages: this.stages.map(s => ({
                 stage: s.stage,
@@ -268,6 +289,7 @@ export class RAGLogger {
             reasoning: this.reasoning,
             retrieved_docs: this.retrievedDocs,
             llm_prompt_summary: this.llmPromptSummary,
+            llm_response: this.llmResponse,
             llm_response_length: this.llmResponseLength,
             total_duration_ms: totalMs,
             error: this.errorMsg,
@@ -279,6 +301,8 @@ export class RAGLogger {
 
             const row = {
                 request_id: logEntry.request_id,
+                user_id: logEntry.user_id,
+                session_id: logEntry.session_id,
                 query: logEntry.query,
                 stages: logEntry.stages,
                 is_dorm_query: logEntry.reasoning?.is_dorm_query ?? false,
@@ -290,6 +314,7 @@ export class RAGLogger {
                 intent_summary: logEntry.reasoning?.intent_summary ?? null,
                 retrieved_docs: logEntry.retrieved_docs,
                 llm_prompt_summary: logEntry.llm_prompt_summary,
+                llm_response: logEntry.llm_response,
                 llm_response_length: logEntry.llm_response_length,
                 total_duration_ms: logEntry.total_duration_ms,
                 error: logEntry.error,
