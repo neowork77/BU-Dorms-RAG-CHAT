@@ -19,6 +19,17 @@ BU Dorms is a high-performance RAG (Retrieval-Augmented Generation) chatbot wrap
 - **Backend/Auth:** [Supabase](https://supabase.com/)
 - **Animations:** [Rive](https://rive.app/)
 
+## 🏗️ Data Pipeline
+ก่อนที่จะเริ่มใช้งาน Chatbot ข้อมูลหอพักจะถูกจัดเตรียมผ่านกระบวนการดังนี้:
+
+Web Scraping: ดึงข้อมูลหอพักจากเว็บไซต์แหล่งที่มา (เช่น RentHub) โดยอัตโนมัติ เพื่อรวบรวมรายละเอียด ชื่อหอพัก ราคา สิ่งอำนวยความสะดวก และที่อยู่
+
+🔗 Google Colab: [Web Scraping Step](https://colab.research.google.com/drive/10suHx7CTBzNjTbUrV6ddgpxyhC9Phvm5?usp=sharing)
+
+Data Prep & Embedding: นำข้อมูลที่ Scrap มาได้มาทำความสะอาด (Cleaning) และจัดการโครงสร้างข้อมูล จากนั้นนำไปผ่านโมเดลเพื่อสร้าง Vector Embeddings และจัดเก็บลงในฐานข้อมูล Supabase เพื่อใช้ในการค้นหาแบบ Semantic Search
+
+🔗 Google Colab: [Prepare data + Embedding](https://colab.research.google.com/drive/14XFtt6YrQS_QyupByA7kcUiuZneOwt6N?usp=sharing)
+
 ## 🚀 Getting Started
 
 Follow these steps to set up the project locally.

@@ -411,10 +411,13 @@ export async function POST(request: Request) {
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
                 };
 
+                let logger: RAGLogger | null = null;
                 try {
-                    const logger = new RAGLogger(message, {
+                    const supabaseLoggerClient = await createClient();
+                    logger = new RAGLogger(message, {
                         userId: userId ?? undefined,
                         sessionId: session_id ?? undefined,
+                        supabase: supabaseLoggerClient,
                     });
 
                     logger.startStage('reasoning');
@@ -461,7 +464,7 @@ export async function POST(request: Request) {
                     ];
 
                     // Log the prompt summary
-                    logger.logLLMPrompt(agentSystemPrompt, message);
+                    logger!.logLLMPrompt(agentSystemPrompt, message);
 
                     let finalAnswer = "";
                     let finalDorms: any[] = [];
@@ -486,31 +489,32 @@ export async function POST(request: Request) {
 
                         if (!responseMessage.tool_calls || responseMessage.tool_calls.length === 0) {
                             if (loopCount === 1) {
-                                logger.logReasoning({
+                                logger!.logReasoning({
                                     is_dorm_query: false, sort_by: 'N/A' as any, max_price: null,
                                     total_raw_results: 0, after_filter_count: 0, top_k: 0,
                                     intent_summary: 'Non-dorm query → direct answer',
                                 });
-                                logger.endStage('reasoning');
+                                logger!.endStage('reasoning');
                             }
 
-                            logger.startStage('generation');
+                            logger!.startStage('generation');
                             send({ stage: 'generation' });
                             finalAnswer = responseMessage.content || "ขออภัยครับ ไม่สามารถสร้างคำตอบได้ในขณะนี้";
-                            logger.logLLMResponse(finalAnswer);
-                            logger.endStage('generation');
+                            logger!.llmResponseSetFallback = true;
+                            logger!.logLLMResponse(finalAnswer);
+                            logger!.endStage('generation');
                             break;
                         }
 
                         if (loopCount === 1) {
-                            logger.logReasoning({
+                            logger!.logReasoning({
                                 is_dorm_query: true,
                                 sort_by: 'tool_call' as any,
                                 max_price: null,
                                 total_raw_results: 0, after_filter_count: 0, top_k: 0,
                                 intent_summary: `Tool(s) selected: ${responseMessage.tool_calls.map(t => t.type === 'function' ? t.function.name : t.type).join(', ')}`,
                             });
-                            logger.endStage('reasoning');
+                            logger!.endStage('reasoning');
                         }
 
                         for (const toolCall of responseMessage.tool_calls) {
@@ -538,7 +542,7 @@ export async function POST(request: Request) {
                                 const targetDormName: string | null = args.target_dorm_name
                                     ? String(args.target_dorm_name).toLowerCase().trim() : null;
 
-                                logger.startStage('search', { model: 'MiniLM-L12' });
+                                logger!.startStage('search', { model: 'MiniLM-L12' });
                                 send({ stage: 'search' });
 
                                 const supabase = await createClient();
@@ -546,16 +550,16 @@ export async function POST(request: Request) {
                                 const { candidates: rawCandidates, rawCount, rawDocs } =
                                     await embedAndRetrieve(message, 1000, maxPrice, supabase);
 
-                                logger.endStage('search', { embedding_dim: 384 });
+                                logger!.endStage('search', { embedding_dim: 384 });
 
-                                logger.startStage('retrieval', { filter_price: maxPrice });
+                                logger!.startStage('retrieval', { filter_price: maxPrice });
                                 send({ stage: 'retrieval' });
 
                                 if (rawCount === 0) {
                                     toolResultText = "ระบบฐานข้อมูล: ไม่พบข้อมูลที่ตรงกับเงื่อนไข กรุณาตอบขออภัยผู้ใช้";
-                                    logger.logReasoning({ is_dorm_query: true, sort_by: sortBy, max_price: maxPrice, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `search_dorm_database | No results` });
-                                    logger.logRetrievedDocs([]);
-                                    logger.endStage('retrieval', { raw_count: 0 });
+                                    logger!.logReasoning({ is_dorm_query: true, sort_by: sortBy, max_price: maxPrice, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `search_dorm_database | No results` });
+                                    logger!.logRetrievedDocs([]);
+                                    logger!.endStage('retrieval', { raw_count: 0 });
                                 } else {
                                     let candidates = [...rawCandidates];
 
@@ -611,14 +615,14 @@ export async function POST(request: Request) {
                                             url: c.url
                                         };
                                     });
-                                    logger.logRetrievedDocs(filteredDocsForLog);
+                                    logger!.logRetrievedDocs(filteredDocsForLog);
 
-                                    logger.logReasoning({
+                                    logger!.logReasoning({
                                         is_dorm_query: true, sort_by: sortBy, max_price: maxPrice,
                                         total_raw_results: rawCount, after_filter_count: candidates.length, top_k: topResults.length,
                                         intent_summary: `search_dorm_database | Sort=${sortBy}, target=${targetDormName ?? 'any'}, top=${topResults.length}`,
                                     });
-                                    logger.endStage('retrieval', { raw_count: rawCount });
+                                    logger!.endStage('retrieval', { raw_count: rawCount });
 
                                     if (topResults.length === 0) {
                                         toolResultText = "ระบบฐานข้อมูล: พบข้อมูลเบื้องต้น แต่หลังกรองแล้วไม่พบหอพักที่ตรงกัน กรุณาตอบขออภัยผู้ใช้";
@@ -650,23 +654,23 @@ export async function POST(request: Request) {
                                 if (maxDistKm === null) {
                                     toolResultText = "ระบบ Error: filter_by_distance ต้องการค่า max_distance_km กรุณาถามผู้ใช้ว่าต้องการระยะทางเท่าไหร่";
                                 } else {
-                                    logger.startStage('search', { model: 'MiniLM-L12' });
+                                    logger!.startStage('search', { model: 'MiniLM-L12' });
                                     send({ stage: 'search' });
 
                                     const supabase = await createClient();
                                     const { candidates: rawCandidates, rawCount, rawDocs } =
                                         await embedAndRetrieve(message, 1000, null, supabase);
 
-                                    logger.endStage('search', { embedding_dim: 384 });
+                                    logger!.endStage('search', { embedding_dim: 384 });
 
-                                    logger.startStage('retrieval', { filter_distance_km: maxDistKm, filter_price: maxPrice });
+                                    logger!.startStage('retrieval', { filter_distance_km: maxDistKm, filter_price: maxPrice });
                                     send({ stage: 'retrieval' });
 
                                     if (rawCount === 0) {
                                         toolResultText = "ระบบฐานข้อมูล: ไม่พบข้อมูลหอพัก กรุณาตอบขออภัยผู้ใช้";
-                                        logger.logReasoning({ is_dorm_query: true, sort_by: sortBy, max_price: maxPrice, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `filter_by_distance | No raw results` });
-                                        logger.logRetrievedDocs([]);
-                                        logger.endStage('retrieval', { raw_count: 0 });
+                                        logger!.logReasoning({ is_dorm_query: true, sort_by: sortBy, max_price: maxPrice, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `filter_by_distance | No raw results` });
+                                        logger!.logRetrievedDocs([]);
+                                        logger!.endStage('retrieval', { raw_count: 0 });
                                     } else {
                                         let candidates = [...rawCandidates];
 
@@ -715,14 +719,14 @@ export async function POST(request: Request) {
                                                 url: c.url
                                             };
                                         });
-                                        logger.logRetrievedDocs(filteredDocsForLog);
+                                        logger!.logRetrievedDocs(filteredDocsForLog);
 
-                                        logger.logReasoning({
+                                        logger!.logReasoning({
                                             is_dorm_query: true, sort_by: sortBy, max_price: maxPrice,
                                             total_raw_results: rawCount, after_filter_count: candidates.length, top_k: topResults.length,
                                             intent_summary: `filter_by_distance | dist≤${maxDistKm}km, price≤${maxPrice ?? '∞'}, top=${topResults.length}`,
                                         });
-                                        logger.endStage('retrieval', { raw_count: rawCount });
+                                        logger!.endStage('retrieval', { raw_count: rawCount });
 
                                         if (topResults.length === 0) {
                                             toolResultText =
@@ -756,25 +760,25 @@ export async function POST(request: Request) {
 
                                 if (dormNames.length < 2) {
                                     toolResultText = "ระบบ Error: ต้องการชื่อหอพักอย่างน้อย 2 ชื่อ กรุณาสอบถามผู้ใช้เพิ่มเติม";
-                                    logger.logReasoning({ is_dorm_query: true, sort_by: 'distance', max_price: null, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `compare_dorms | Failed: <2 names` });
+                                    logger!.logReasoning({ is_dorm_query: true, sort_by: 'distance', max_price: null, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `compare_dorms | Failed: <2 names` });
                                 } else {
-                                    logger.startStage('search', { model: 'MiniLM-L12' });
+                                    logger!.startStage('search', { model: 'MiniLM-L12' });
                                     send({ stage: 'search' });
 
                                     const supabase = await createClient();
                                     const { candidates: rawCandidates, rawCount, rawDocs } =
                                         await embedAndRetrieve(dormNames.join(' '), 1000, null, supabase);
 
-                                    logger.endStage('search', { embedding_dim: 384 });
+                                    logger!.endStage('search', { embedding_dim: 384 });
 
-                                    logger.startStage('retrieval');
+                                    logger!.startStage('retrieval');
                                     send({ stage: 'retrieval' });
 
                                     if (rawCount === 0) {
                                         toolResultText = "ระบบฐานข้อมูล: ไม่พบข้อมูลหอพักที่ต้องการเปรียบเทียบ กรุณาตอบขออภัย";
-                                        logger.logReasoning({ is_dorm_query: true, sort_by: 'distance', max_price: null, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `compare_dorms | No results` });
-                                        logger.logRetrievedDocs([]);
-                                        logger.endStage('retrieval', { raw_count: 0 });
+                                        logger!.logReasoning({ is_dorm_query: true, sort_by: 'distance', max_price: null, total_raw_results: 0, after_filter_count: 0, top_k: 0, intent_summary: `compare_dorms | No results` });
+                                        logger!.logRetrievedDocs([]);
+                                        logger!.endStage('retrieval', { raw_count: 0 });
                                     } else {
                                         // 🔥 ใช้ Fuzzy Keyword Matching ในการเปรียบเทียบด้วย!
                                         let matched: Candidate[] = [];
@@ -799,14 +803,14 @@ export async function POST(request: Request) {
                                                 url: c.url
                                             };
                                         });
-                                        logger.logRetrievedDocs(filteredDocsForLog);
+                                        logger!.logRetrievedDocs(filteredDocsForLog);
 
-                                        logger.logReasoning({
+                                        logger!.logReasoning({
                                             is_dorm_query: true, sort_by: 'distance', max_price: null,
                                             total_raw_results: rawCount, after_filter_count: matched.length, top_k: topResults.length,
                                             intent_summary: `compare_dorms | [${dormNames.join(', ')}] → found ${topResults.length}`,
                                         });
-                                        logger.endStage('retrieval', { raw_count: rawCount });
+                                        logger!.endStage('retrieval', { raw_count: rawCount });
 
                                         if (topResults.length < 2) {
                                             const foundName = topResults[0]?.name ?? 'ไม่พบ';
@@ -883,12 +887,32 @@ export async function POST(request: Request) {
                     }
                     answer = newLines.join('\n');
 
-                    await logger.finalize();
+                    if (!logger!.hasLLMResponse?.() && !logger!.llmResponseSetFallback) {
+                        logger!.startStage('generation');
+                        logger!.logLLMResponse(answer);
+                        logger!.endStage('generation');
+                    } else if (logger!.llmResponseSetFallback) {
+                        // If we already set it but answer was modified, we can just log it again 
+                        // but actually logLLMResponse just overwrites.
+                        // Better to always ensure it's logged:
+                        logger!.logLLMResponse(answer);
+                    } else {
+                        // If it hasLLMResponse, still update the final answer just in case
+                        logger!.logLLMResponse(answer);
+                    }
+
+                    await logger!.finalize();
                     send({ stage: 'done', result: answer, dorms: finalDorms });
                     controller.close();
 
                 } catch (err: any) {
                     console.error('Stream Error:', err);
+                    if (logger) {
+                        logger.logError(err);
+                        logger.startStage('error');
+                        logger.endStage('error');
+                        await logger.finalize();
+                    }
                     send({ error: true, result: err.message || 'เกิดข้อผิดพลาดในระบบ โปรดลองใหม่อีกครั้งครับ' });
                     controller.close();
                 }

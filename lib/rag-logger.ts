@@ -90,12 +90,17 @@ export class RAGLogger {
     private llmResponse: string | null = null;
     private llmResponseLength: number | null = null;
     private errorMsg: string | null = null;
+    private hasInserted: boolean = false;
+    private flushPromise: Promise<void> = Promise.resolve();
+    private supabaseClient: any = null;
+    public llmResponseSetFallback: boolean = false;
 
-    constructor(query: string, opts?: { userId?: string; sessionId?: string }) {
+    constructor(query: string, opts?: { userId?: string; sessionId?: string; supabase?: any }) {
         this.requestId = this.generateId();
         this.query = query;
         this.userId = opts?.userId ?? null;
         this.sessionId = opts?.sessionId ?? null;
+        this.supabaseClient = opts?.supabase ?? null;
         this.startTime = performance.now();
 
         this.printHeader();
@@ -134,6 +139,7 @@ export class RAGLogger {
             `${style.icon} ${style.color}${COLORS.bold}▶ ${style.label}${COLORS.reset}` +
             (metadata ? ` ${COLORS.dim}${JSON.stringify(metadata)}${COLORS.reset}` : '')
         );
+        void this.flush();
     }
 
     endStage(stage: RAGStage, metadata?: Record<string, unknown>) {
@@ -149,6 +155,7 @@ export class RAGLogger {
                 `${style.icon} ${style.color}■ ${style.label} completed${COLORS.reset} ` +
                 `${COLORS.bold}(${entry.durationMs}ms)${COLORS.reset}`
             );
+            void this.flush();
         }
     }
 
@@ -163,10 +170,19 @@ export class RAGLogger {
 
     // ── Reasoning ──────────────────────────────────────────────
     logReasoning(info: ReasoningInfo) {
-        this.reasoning = info;
+        this.reasoning = info; // keep last for legacy top-level fields
+
+        // Attach to the last 'reasoning' stage so we preserve multiple loops
+        const lastReasoning = [...this.stages].reverse().find(s => s.stage === 'reasoning');
+        if (lastReasoning) {
+            lastReasoning.metadata = {
+                ...lastReasoning.metadata,
+                reasoningInfo: info
+            };
+        }
 
         console.log(
-            `\n${COLORS.yellow}${COLORS.bold}🧠 Reasoning Summary${COLORS.reset}\n` +
+            `\n${COLORS.cyan}🧠 Reasoning Summary${COLORS.reset}\n` +
             `${COLORS.dim}${'─'.repeat(50)}${COLORS.reset}\n` +
             `  ${COLORS.white}Is Dorm Query:${COLORS.reset}    ${info.is_dorm_query ? '✅ Yes' : '❌ No'}\n` +
             `  ${COLORS.white}Sort By:${COLORS.reset}          ${info.sort_by}\n` +
@@ -179,11 +195,17 @@ export class RAGLogger {
                 : '') +
             `${COLORS.dim}${'─'.repeat(50)}${COLORS.reset}`
         );
+        void this.flush();
     }
 
     // ── Retrieved Docs ─────────────────────────────────────────
     logRetrievedDocs(docs: RetrievedDoc[]) {
         this.retrievedDocs = docs;
+
+        const lastRetrieval = [...this.stages].reverse().find(s => s.stage === 'retrieval');
+        if (lastRetrieval) {
+            lastRetrieval.metadata = { ...lastRetrieval.metadata, docs };
+        }
 
         if (docs.length === 0) {
             console.log(`\n${COLORS.red}📭 No documents retrieved${COLORS.reset}`);
@@ -226,12 +248,18 @@ export class RAGLogger {
         }
 
         console.log(`${COLORS.dim}${'─'.repeat(80)}${COLORS.reset}\n`);
+        void this.flush();
     }
 
     // ── LLM Prompt / Response ──────────────────────────────────
     logLLMPrompt(systemPrompt: string, userPrompt: string) {
         const summary = `System(${systemPrompt.length} chars) | User(${userPrompt.length} chars)`;
         this.llmPromptSummary = summary;
+
+        const lastReasoning = [...this.stages].reverse().find(s => s.stage === 'reasoning');
+        if (lastReasoning) {
+            lastReasoning.metadata = { ...lastReasoning.metadata, llmPromptSummary: summary, systemSnippet: truncate(systemPrompt, 120), userSnippet: truncate(userPrompt, 120) };
+        }
 
         console.log(
             `${COLORS.magenta}${COLORS.bold}✍️  LLM Prompt${COLORS.reset}\n` +
@@ -240,16 +268,27 @@ export class RAGLogger {
             `  ${COLORS.dim}System snippet: "${truncate(systemPrompt, 120)}"${COLORS.reset}\n` +
             `  ${COLORS.dim}User snippet:   "${truncate(userPrompt, 120)}"${COLORS.reset}`
         );
+        void this.flush();
     }
 
     logLLMResponse(response: string) {
         this.llmResponse = response;
         this.llmResponseLength = response.length;
 
+        const lastGeneration = [...this.stages].reverse().find(s => s.stage === 'generation');
+        if (lastGeneration) {
+            lastGeneration.metadata = { ...lastGeneration.metadata, llmResponse: response, snippet: truncate(response, 150) };
+        }
+
         console.log(
             `${COLORS.magenta}✍️  LLM Response: ${response.length} chars${COLORS.reset}\n` +
             `  ${COLORS.dim}Snippet: "${truncate(response, 150)}"${COLORS.reset}`
         );
+        void this.flush();
+    }
+
+    hasLLMResponse(): boolean {
+        return this.llmResponse !== null;
     }
 
     // ── Error ──────────────────────────────────────────────────
@@ -261,6 +300,52 @@ export class RAGLogger {
             `${COLORS.red}${COLORS.bold}❌ Pipeline Error${COLORS.reset}\n` +
             `  ${COLORS.red}${msg}${COLORS.reset}`
         );
+        void this.flush();
+    }
+
+    // ── Realtime Flush ─────────────────────────────────────────
+    async flush() {
+        // Capture the snapshot synchronously
+        const totalMs = Math.round(performance.now() - this.startTime);
+        const logEntry = {
+            request_id: this.requestId,
+            user_id: this.userId,
+            session_id: this.sessionId,
+            query: this.query,
+            stages: this.stages.map(s => ({
+                stage: s.stage,
+                startedAt: s.startedAt,
+                endedAt: s.endedAt,
+                durationMs: s.durationMs ?? Math.round((s.endedAt || performance.now()) - s.startedAt),
+                metadata: s.metadata,
+            })),
+            is_dorm_query: this.reasoning?.is_dorm_query ?? false,
+            sort_by: this.reasoning?.sort_by ?? null,
+            max_price: this.reasoning?.max_price ?? null,
+            total_raw_results: this.reasoning?.total_raw_results ?? 0,
+            after_filter_count: this.reasoning?.after_filter_count ?? 0,
+            top_k: this.reasoning?.top_k ?? 0,
+            intent_summary: this.reasoning?.intent_summary ?? null,
+            retrieved_docs: this.retrievedDocs,
+            llm_prompt_summary: this.llmPromptSummary,
+            llm_response: this.llmResponse,
+            llm_response_length: this.llmResponseLength,
+            total_duration_ms: totalMs,
+            error: this.errorMsg,
+        };
+
+        // Queue the database operation to prevent race conditions
+        this.flushPromise = this.flushPromise.then(async () => {
+            try {
+                const supabase = this.supabaseClient || await createClient();
+                const { error } = await supabase.from('rag_pipeline_logs').insert(logEntry);
+                if (error) console.error("RAGLogger Insert Error:", error.message);
+            } catch (err: any) {
+                console.error("RAGLogger Flush Exception:", err.message);
+            }
+        });
+
+        await this.flushPromise;
     }
 
     // ── Finalize: console summary + write to Supabase ──────────
@@ -297,44 +382,11 @@ export class RAGLogger {
 
         // ── Write to Supabase ──────────────────────────────────
         try {
-            const supabase = await createClient();
-
-            const row = {
-                request_id: logEntry.request_id,
-                user_id: logEntry.user_id,
-                session_id: logEntry.session_id,
-                query: logEntry.query,
-                stages: logEntry.stages,
-                is_dorm_query: logEntry.reasoning?.is_dorm_query ?? false,
-                sort_by: logEntry.reasoning?.sort_by ?? null,
-                max_price: logEntry.reasoning?.max_price ?? null,
-                total_raw_results: logEntry.reasoning?.total_raw_results ?? 0,
-                after_filter_count: logEntry.reasoning?.after_filter_count ?? 0,
-                top_k: logEntry.reasoning?.top_k ?? 0,
-                intent_summary: logEntry.reasoning?.intent_summary ?? null,
-                retrieved_docs: logEntry.retrieved_docs,
-                llm_prompt_summary: logEntry.llm_prompt_summary,
-                llm_response: logEntry.llm_response,
-                llm_response_length: logEntry.llm_response_length,
-                total_duration_ms: logEntry.total_duration_ms,
-                error: logEntry.error,
-            };
-
-            const { error } = await supabase
-                .from('rag_pipeline_logs')
-                .insert(row);
-
-            if (error) {
-                console.error(
-                    `${COLORS.red}⚠️ Failed to write log to Supabase:${COLORS.reset}`,
-                    error.message
-                );
-            } else {
-                console.log(
-                    `${COLORS.green}📤 Log saved to Supabase${COLORS.reset} ` +
-                    `${COLORS.dim}(request_id: ${logEntry.request_id})${COLORS.reset}`
-                );
-            }
+            await this.flush();
+            console.log(
+                `${COLORS.green}📤 Log finalized in Supabase${COLORS.reset} ` +
+                `${COLORS.dim}(request_id: ${logEntry.request_id})${COLORS.reset}`
+            );
         } catch (err: any) {
             // Don't crash the API if logging fails
             console.error(
