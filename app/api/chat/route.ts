@@ -460,6 +460,9 @@ export async function POST(request: Request) {
                         { role: 'user', content: message }
                     ];
 
+                    // Log the prompt summary
+                    logger.logLLMPrompt(agentSystemPrompt, message);
+
                     let finalAnswer = "";
                     let finalDorms: any[] = [];
                     let loopCount = 0;
