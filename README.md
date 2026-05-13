@@ -25,7 +25,12 @@ Follow these steps to set up the project locally.
 
 ### Prerequisites
 
-Make sure you have Node.js installed on your machine.
+Make sure you have the following installed on your machine:
+- [Node.js](https://nodejs.org/) (Version 20 or higher recommended)
+- `npm`, `yarn`, or `pnpm` (Package manager)
+- A [Supabase](https://supabase.com/) account and project (with `pgvector` enabled and the provided SQL migration executed)
+- An API key for [Typhoon API](https://opentyphoon.ai/) (LLM generation)
+- An API token for [HuggingFace](https://huggingface.co/) (Embedding generation)
 
 ### 1. Install Dependencies
 
@@ -39,14 +44,24 @@ pnpm install
 
 ### 2. Set Up Environment Variables
 
-Create a `.env.local` file in the root of the project and add your Supabase credentials:
+Create a `.env.local` file in the root of the project (you can copy `.env.example`) and add your credentials:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Typhoon API Key (for LLM generation)
+TYPHOON_API_KEY=your_typhoon_api_key
+
+# HuggingFace API Token (for Vector Embeddings)
+HF_API_TOKEN=your_huggingface_api_token
 ```
 
-### 3. Run the Development Server
+### 3. Database Setup
+
+Ensure you have run the provided SQL migration (`supabase-migration-chat-history.sql`) in your Supabase SQL editor to create the necessary tables for chat history and RAG functionality.
+
+### 4. Run the Development Server
 
 Start the development server:
 
@@ -59,6 +74,17 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## 🔄 Architecture & Workflow
+
+BU Dorms uses a Retrieval-Augmented Generation (RAG) pipeline to accurately answer your questions about dorms.
+
+1. **User Query**: The user inputs a question or a search term related to finding a dorm through the chat interface.
+2. **Embedding Generation**: The application uses the HuggingFace Inference API to convert the user's query into a vector embedding.
+3. **Vector Search (Retrieval)**: The query embedding is used to perform a semantic search within Supabase (`pgvector`). The database retrieves the most relevant dorms based on the query.
+4. **Context Assembly**: The retrieved dorm information (names, prices, descriptions, amenities, and images) is formatted and assembled into a structured context.
+5. **LLM Generation**: The user's query and the assembled context are sent to the Typhoon LLM. The model generates a conversational, helpful response acting as a friendly assistant.
+6. **Response Delivery**: The generated text, along with interactive dorm cards containing images and details, are streamed back to the frontend chat interface.
 
 ## 📂 Project Structure
 
@@ -73,4 +99,10 @@ Contributions, issues, and feature requests are welcome!
 
 ## 📜 License
 
-This project is licensed under the MIT License.
+This project is open-source and available under the MIT License.
+
+### ⚠️ Limitations & Disclaimer
+
+- **Educational Purpose:** This project and its source code are created for educational and demonstration purposes only.
+- **Data Ownership:** The dorm data, descriptions, prices, and images used or retrieved by the RAG pipeline are the property of their respective owners. They are used here strictly for demonstration and may be subject to their own copyright or usage terms.
+- **Accuracy:** The information provided by the AI chatbot may not always be 100% accurate, complete, or up-to-date. Users should verify any critical information (such as prices and availability) directly with the respective dormitories.
